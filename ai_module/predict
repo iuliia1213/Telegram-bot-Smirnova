@@ -1,15 +1,14 @@
-
 # Модуль для использования обученной модели в боте предоставляет функции для загрузки модели и получения предсказаний
 
 import os
 from typing import Tuple, Optional
-from ai_module.train import PetStoreIntentClassifier
+from ai_module.train import PetStoreIntentClassifier  
 
-# Менеджер для управления загрузкой и использованием ИИ-модели для реализации паттерна Singleton для эффективного использования памяти
+# Менеджер для управления загрузкой и использованием ИИ-модели, используем для реализации  паттерна Singleton для эффективного использования памяти 
 class AIModelManager:
-    
+        
     _instance = None
-    _model = None
+    _classifier = None
     
     # Реализация паттерна Singleton
     def __new__(cls):
@@ -24,9 +23,9 @@ class AIModelManager:
         self.model_path = os.getenv('AI_MODEL_PATH', 'ai_model/pet_store_model')
         self._classifier = None
 
-    # Загрузка обученной модели   
+    #  Загрузим обученную модель   
     def load_model(self) -> Optional[PetStoreIntentClassifier]:
-
+        
         if self._classifier is not None:
             return self._classifier
             
@@ -42,29 +41,28 @@ class AIModelManager:
             print(f"Ошибка при загрузке модели: {e}")
             return None
     
-    # Предсказание намерения для текстового запроса Args
-    def predict_intent(self, text: str) -> Tuple[str, float]:
+    # Предсказание намерения для текстового запроса
+    def predict_user_intent(self, user_text: str) -> Tuple[str, float]:
         
         classifier = self.load_model()
         if classifier is None:
-            # Если модель не загружена, возвращаем намерение "other" с низкой уверенностью
+            # Если модель не загружена, возвращаем "other" с низкой уверенностью
             return "other", 0.0
             
-        return classifier.predict(text)
+        return classifier.predict(user_text)
     
-    # Проверим загружена ли модель
+    # Проверка загружена ли модель
     def is_model_loaded(self) -> bool:
         
         return self._classifier is not None
 
-# Основная функция для получения ответа от ИИ, используем ее в обработчиках бота для генерации ответов.
-def get_ai_response(user_message: str) -> dict:
- 
-    
+# Основная функция для получения ответа от ИИ, использующаяся в обработчиках бота для генерации ответов
+def get_bot_response(user_message: str) -> dict:
+   
     manager = AIModelManager()
-    intent, confidence = manager.predict_intent(user_message)
+    intent, confidence = manager.predict_user_intent(user_message)
     
-    # Формирование ответа в зависимости от намерения
+    # Шаблоны ответов для каждого намерения
     response_templates = {
         "find_product": "Я помогу вам найти нужный товар. Какой именно товар вас интересует?",
         "get_product_info": "Я предоставлю информацию о товаре. Укажите, пожалуйста, название или артикул.",
@@ -80,10 +78,10 @@ def get_ai_response(user_message: str) -> dict:
         "other": "Извините, я не совсем понял ваш запрос. Попробуйте переформулировать или воспользуйтесь командой /help"
     }
     
-    response = response_templates.get(intent, response_templates["other"])
+    response_text = response_templates.get(intent, response_templates["other"])
     
     return {
         "intent": intent,
         "confidence": confidence,
-        "response": response
+        "response": response_text
     }
