@@ -49,7 +49,7 @@ class AIModelManager:
             # Если модель не загружена, возвращаем "other" с низкой уверенностью
             return "other", 0.0
             
-        return classifier.predict(user_text)
+        return classifier.предсказать(user_text)
     
     # Проверка загружена ли модель
     def is_model_loaded(self) -> bool:
