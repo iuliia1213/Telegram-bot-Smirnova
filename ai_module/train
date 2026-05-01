@@ -1,0 +1,106 @@
+# Модуль для использования обученной модели в боте,предоставляющий функции для загрузки модели и получения предсказаний
+
+import os
+from typing import Tuple, Optional
+from ai_module.train import PetStoreIntentClassifier  # Импорт класса из модуля обучения
+
+class AIModelManager:
+    
+    # Менеджер для управления загрузкой и использованием ИИ-модели. Нужен для реализации паттерна Singleton для эффективного использования памяти
+   
+    _instance = None
+    _classifier = None
+    
+    # Реализация паттерна Singleton
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super(AIModelManager, cls).__new__(cls)
+        return cls._instance
+    
+    # Инициализация менеджера модели
+    def __init__(self):
+        self.model_path = os.getenv('AI_MODEL_PATH', 'ai_model/pet_store_model')
+        self._classifier = None
+
+     # Загрузка обученной модели
+    def load_model(self) -> Optional[PetStoreIntentClassifier]:
+        if self._classifier is not None:
+            return self._classifier
+            
+        try:
+            if os.path.exists(self.model_path):
+                self._classifier = PetStoreIntentClassifier.load_model(self.model_path)
+                print(f"Модель успешно загружена из {self.model_path}")
+                return self._classifier
+            else:
+                print(f"Модель не найдена по пути {self.model_path}")
+                return None
+        except Exception as e:
+            print(f"Ошибка при загрузке модели: {e}")
+            return None
+    
+     # Предсказание намерения для текстового запроса
+    def predict_user_intent(self, user_text: str) -> Tuple[str, float]:
+        
+        classifier = self.load_model()
+        # Если модель не загружена, возвращаем "other" с низкой уверенностью
+        if classifier is None:
+             return "other", 0.0
+            
+        return classifier.predict(user_text)
+    
+    # Проверка загружена ли модель
+    def is_model_loaded(self) -> bool:
+        
+        return self._classifier is not None
+
+# Основная функция для получения ответа от ИИ, используется в обработчиках бота для генерации ответов
+def get_bot_response(user_message: str) -> dict:
+
+    manager = AIModelManager()
+    intent, confidence = manager.predict_user_intent(user_message)
+    
+    # Шаблоны ответов для каждого намерения
+    response_templates = {
+        "find_product": "Я помогу вам найти нужный товар. Какой именно товар вас интересует?",
+        "get_product_info": "Я предоставлю информацию о товаре. Укажите, пожалуйста, название или артикул.",
+        "check_price": "Цена на данный товар составляет... (уточните товар)",
+        "check_availability": "Проверю наличие товара. Какой товар вас интересует?",
+        "get_care_advice": "Я подскажу по уходу за питомцем. Что именно вас интересует?",
+        "ask_delivery": "Информация о доставке: мы доставляем по всей России...",
+        "ask_payment": "Способы оплаты: картой онлайн, наличными при получении...",
+        "ask_promotions": "Сейчас действуют акции на корма и аксессуары...",
+        "greeting": "Здравствуйте! Я бот-помощник зоомагазина 'Четыре Лапы'. Чем могу помочь?",
+        "goodbye": "До свидания! Будем рады видеть вас снова!",
+        "help": "Я могу помочь с поиском товаров, информацией о доставке и оплате...",
+        "other": "Извините, я не совсем понял ваш запрос. Попробуйте переформулировать или воспользуйтесь командой /help"
+    }
+    
+    response_text = response_templates.get(intent, response_templates["other"])
+    
+    return {
+        "intent": intent,
+        "confidence": confidence,
+        "response": response_text
+    }
+
+    #  Скрипт для обучения модели запускается отдельно для создания обученной модели
+ if __name__ == "__main__":
+    
+      
+    print("Создание обучающих данных...")
+    texts, labels = create_training_data()
+    
+    print("Инициализация классификатора...")
+    classifier = PetStoreIntentClassifier()
+    
+    print("Подготовка данных для обучения...")
+    X, y = classifier.prepare_data(texts, labels)
+    
+    print("Обучение модели...")
+    history = classifier.train(X, y, epochs=50, batch_size=16)
+    
+    print("Сохранение модели...")
+    classifier.save_model('ai_model/pet_store_model')
+    
+    print("Обучение завершено! Модель сохранена в директории 'ai_model/pet_store_model'")
