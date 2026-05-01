@@ -1,106 +1,254 @@
-# Модуль для использования обученной модели в боте,предоставляющий функции для загрузки модели и получения предсказаний
+# Модуль для обучения нейросетевой модели классификации запросов пользователей,обучается на данных с сайта 4lapy.ru для определения намерений пользователя
 
+import json
+import numpy as np
+import tensorflow as tf
+from tensorflow.keras import layers, models
+from tensorflow.keras.preprocessing.text import Tokenizer
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+from sklearn.preprocessing import LabelEncoder
+from typing import List, Tuple, Dict
+import pickle
 import os
-from typing import Tuple, Optional
-from ai_module.train import PetStoreIntentClassifier  # Импорт класса из модуля обучения
 
-class AIModelManager:
-    
-    # Менеджер для управления загрузкой и использованием ИИ-модели. Нужен для реализации паттерна Singleton для эффективного использования памяти
-   
-    _instance = None
-    _classifier = None
-    
-    # Реализация паттерна Singleton
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super(AIModelManager, cls).__new__(cls)
-        return cls._instance
-    
-    # Инициализация менеджера модели
-    def __init__(self):
-        self.model_path = os.getenv('AI_MODEL_PATH', 'ai_model/pet_store_model')
-        self._classifier = None
+# Определение намерений пользователя для классификации
+INTENTS = [
+    "find_product",           # Поиск товара
+    "get_product_info",       # Получение информации о товаре
+    "check_price",            # Проверка цены
+    "check_availability",     # Проверка наличия
+    "get_care_advice",        # Советы по уходу за питомцем
+    "ask_delivery",           # Вопросы о доставке
+    "ask_payment",            # Вопросы об оплате
+    "ask_promotions",         # Вопросы об акциях
+    "greeting",               # Приветствие
+    "goodbye",                # Прощание
+    "help",                   # Помощь
+    "other"                   # Прочие запросы
+]
 
-     # Загрузка обученной модели
-    def load_model(self) -> Optional[PetStoreIntentClassifier]:
-        if self._classifier is not None:
-            return self._classifier
-            
-        try:
-            if os.path.exists(self.model_path):
-                self._classifier = PetStoreIntentClassifier.load_model(self.model_path)
-                print(f"Модель успешно загружена из {self.model_path}")
-                return self._classifier
-            else:
-                print(f"Модель не найдена по пути {self.model_path}")
-                return None
-        except Exception as e:
-            print(f"Ошибка при загрузке модели: {e}")
-            return None
-    
-     # Предсказание намерения для текстового запроса
-    def predict_user_intent(self, user_text: str) -> Tuple[str, float]:
+# Классификатор пользовательских намерений для запросов, связанных с зоомагазином
+# Используем в работе рекуррентную нейронную сеть (RNN) с слоями LSTM
+class PetStoreIntentClassifier:
+
+    # Инициализация классификатора  
+    def __init__(self, vocab_size: int = 10000, max_sequence_length: int = 100,
+                 embedding_size: int = 128):
         
-        classifier = self.load_model()
-        # Если модель не загружена, возвращаем "other" с низкой уверенностью
-        if classifier is None:
-             return "other", 0.0
-            
-        return classifier.predict(user_text)
-    
-    # Проверка загружена ли модель
-    def is_model_loaded(self) -> bool:
+        self.vocab_size = vocab_size
+        self.max_sequence_length = max_sequence_length
+        self.embedding_size = embedding_size
         
-        return self._classifier is not None
+        # Инициализация компонентов предобработки текста
+        self.tokenizer = Tokenizer(num_words=vocab_size, oov_token="<OOV>")
+        self.label_encoder = LabelEncoder()
+        self.model = None
 
-# Основная функция для получения ответа от ИИ, используется в обработчиках бота для генерации ответов
-def get_bot_response(user_message: str) -> dict:
+    # Подготовим данные для обучения: токенизация и кодирование меток   
+    def подготовить_данные(self, тексты: List[str], метки: List[str]) -> Tuple[np.ndarray, np.ndarray]:
+        
+        # Обучение токенизатора на всех текстах
+        self.tokenizer.fit_on_texts(тексты)
+        последовательности = self.tokenizer.texts_to_sequences(тексты)
+        отформатированные_последовательности = pad_sequences(последовательности, maxlen=self.max_sequence_length, 
+                                         padding='post', truncating='post')
+        
+        # Кодирование меток в числа
+        закодированные_метки = self.label_encoder.fit_transform(метки)
+        
+        return отформатированные_последовательности, закодированные_метки
+    
+    # Создадим архитектуры нейросети
+    def построить_модель(self) -> tf.keras.Model:
 
-    manager = AIModelManager()
-    intent, confidence = manager.predict_user_intent(user_message)
+        модель = models.Sequential([
+            layers.Embedding(self.vocab_size, self.embedding_size, input_length=self.max_sequence_length),
+            layers.Bidirectional(layers.LSTM(64, return_sequences=True)),
+            layers.Dropout(0.3),
+            layers.Bidirectional(layers.LSTM(32)),
+            layers.Dropout(0.3),
+            layers.Dense(64, activation='relu'),
+            layers.Dropout(0.2),
+            layers.Dense(len(INTENTS), activation='softmax')
+        ])
+        модель.compile(
+            optimizer='adam',
+            loss='sparse_categorical_crossentropy',
+            metrics=['accuracy']
+        )
+        self.model = модель
+        return модель
     
-    # Шаблоны ответов для каждого намерения
-    response_templates = {
-        "find_product": "Я помогу вам найти нужный товар. Какой именно товар вас интересует?",
-        "get_product_info": "Я предоставлю информацию о товаре. Укажите, пожалуйста, название или артикул.",
-        "check_price": "Цена на данный товар составляет... (уточните товар)",
-        "check_availability": "Проверю наличие товара. Какой товар вас интересует?",
-        "get_care_advice": "Я подскажу по уходу за питомцем. Что именно вас интересует?",
-        "ask_delivery": "Информация о доставке: мы доставляем по всей России...",
-        "ask_payment": "Способы оплаты: картой онлайн, наличными при получении...",
-        "ask_promotions": "Сейчас действуют акции на корма и аксессуары...",
-        "greeting": "Здравствуйте! Я бот-помощник зоомагазина 'Четыре Лапы'. Чем могу помочь?",
-        "goodbye": "До свидания! Будем рады видеть вас снова!",
-        "help": "Я могу помочь с поиском товаров, информацией о доставке и оплате...",
-        "other": "Извините, я не совсем понял ваш запрос. Попробуйте переформулировать или воспользуйтесь командой /help"
-    }
+    # Обучим модель 
+    def обучить(self, X_train: np.ndarray, y_train: np.ndarray, 
+                epochs: int = 20, batch_size: int = 32,
+                validation_split: float = 0.2) -> tf.keras.callbacks.History:
+       
+        if self.model is None:
+            self.построить_модель()
+        
+        ранняя_остановка = tf.keras.callbacks.EarlyStopping(
+            monitor='val_loss',
+            patience=5,
+            restore_best_weights=True
+        )
+        история = self.model.fit(
+            X_train, y_train,
+            epochs=epochs,
+            batch_size=batch_size,
+            validation_split=validation_split,
+            callbacks=[ранняя_остановка],
+            verbose=1
+        )
+        return история
     
-    response_text = response_templates.get(intent, response_templates["other"])
+    # Предскажем намерения по новому тексту
+    def предсказать(self, текст: str) -> Tuple[str, float]:
+        
+        последовательность = self.tokenizer.texts_to_sequences([текст])
+        отформатированный_вход = pad_sequences(последовательность, maxlen=self.max_sequence_length,
+                              padding='post', truncating='post')
+        прогнозы = self.model.predict(отформатированный_вход, verbose=0)[0]
+        класс_предсказания = np.argmax(прогнозы)
+        уверенность = прогнозы[класс_предсказания]
+        намерение = self.label_encoder.inverse_transform([класс_предсказания])[0]
+        return намерение, float(уверенность)
     
-    return {
-        "intent": intent,
-        "confidence": confidence,
-        "response": response_text
-    }
+    # Сохранение модели и компонентов
+    def сохранить_модель(self, путь: str):
+        
+        os.makedirs(путь, exist_ok=True)
+        self.model.save(os.path.join(путь, 'model.h5'))
+        with open(os.path.join(путь, 'tokenizer.pkl'), 'wb') as f:
+            pickle.dump(self.tokenizer, f)
+        with open(os.path.join(путь, 'label_encoder.pkl'), 'wb') as f:
+            pickle.dump(self.label_encoder, f)
+        конфиг = {
+            'vocab_size': self.vocab_size,
+            'max_sequence_length': self.max_sequence_length,
+            'embedding_size': self.embedding_size,
+            'intents': INTENTS
+        }
+        with open(os.path.join(путь, 'config.json'), 'w', encoding='utf-8') as f:
+            json.dump(конфиг, f, ensure_ascii=False, indent=2)
+    
+    @classmethod
+    # Загрузим модели из файла
+    def загрузить_модель(cls, путь: str) -> 'PetStoreIntentClassifier':
 
-    #  Скрипт для обучения модели запускается отдельно для создания обученной модели
- if __name__ == "__main__":
+        with open(os.path.join(путь, 'config.json'), 'r', encoding='utf-8') as f:
+            конфиг = json.load(f)
+
+        # Создаем новый экземпляр
+        классификатор = cls(
+            vocab_size=конфиг['vocab_size'],
+            max_sequence_length=конфиг['max_sequence_length'],
+            embedding_size=конфиг['embedding_size']
+        )
+
+        # Загружаем компоненты
+        with open(os.path.join(путь, 'tokenizer.pkl'), 'rb') as f:
+            классификатор.tokenizer = pickle.load(f)
+        with open(os.path.join(путь, 'label_encoder.pkl'), 'rb') as f:
+            классификатор.label_encoder = pickle.load(f)
+
+        # Загружаем модель
+        классификатор.model = tf.keras.models.load_model(os.path.join(путь, 'model.h5'))
+        return классификатор
+
+# Создадим тренировочный набор данных
+def создать_обучающие_данные() -> Tuple[List[str], List[str]]:
     
-      
+    тексты = []
+    метки = []
+
+    # Примеры запросов для обучения
+    примеры = [
+        ("Найди корм для собак", "find_product"),
+        ("Покажи товары для кошек", "find_product"),
+        ("Ищу игрушки для собак", "find_product"),
+        ("Где найти ошейник для собаки", "find_product"),
+        ("Покажи корма для котят", "find_product"),
+        ("Расскажи о корме Роял Канин", "get_product_info"),
+        ("Что входит в состав корма", "get_product_info"),
+        ("Характеристики игрушки", "get_product_info"),
+        ("Описание ошейника", "get_product_info"),
+        ("Информация о витаминах", "get_product_info"),
+        ("Сколько стоит корм", "check_price"),
+        ("Цена на игрушки", "check_price"),
+        ("Почем ошейник", "check_price"),
+        ("Какая цена у корма", "check_price"),
+        ("Стоимость витаминов", "check_price"),
+        ("Есть ли в наличии корм", "check_availability"),
+        ("Можно ли купить игрушку", "check_availability"),
+        ("Наличие ошейников", "check_availability"),
+        ("Есть ли этот товар", "check_availability"),
+        ("Доступен ли корм для покупки", "check_availability"),
+        ("Как ухаживать за собакой", "get_care_advice"),
+        ("Посоветуйте корм для кота", "get_care_advice"),
+        ("Как часто кормить щенка", "get_care_advice"),
+        ("Советы по уходу за шерстью", "get_care_advice"),
+        ("Как приучить котенка к лотку", "get_care_advice"),
+        ("Как заказать доставку", "ask_delivery"),
+        ("Сроки доставки", "ask_delivery"),
+        ("Сколько стоит доставка", "ask_delivery"),
+        ("Доставляете ли в мой город", "ask_delivery"),
+        ("Как получить заказ", "ask_delivery"),
+        ("Какие способы оплаты", "ask_payment"),
+        ("Можно оплатить картой", "ask_payment"),
+        ("Как оплатить заказ", "ask_payment"),
+        ("Наложенный платеж", "ask_payment"),
+        ("Оплата при получении", "ask_payment"),
+        ("Какие сейчас акции", "ask_promotions"),
+        ("Есть ли скидки", "ask_promotions"),
+        ("Промокоды на скидку", "ask_promotions"),
+        ("Акционные товары", "ask_promotions"),
+        ("Специальные предложения", "ask_promotions"),
+        ("Привет", "greeting"),
+        ("Здравствуйте", "greeting"),
+        ("Добрый день", "greeting"),
+        ("Хай", "greeting"),
+        ("Начнем", "greeting"),
+        ("Пока", "goodbye"),
+        ("До свидания", "goodbye"),
+        ("Спасибо, до встречи", "goodbye"),
+        ("Всего доброго", "goodbye"),
+        ("Завершить", "goodbye"),
+        ("Помогите", "help"),
+        ("Что ты умеешь", "help"),
+        ("Какие команды есть", "help"),
+        ("Как пользоваться", "help"),
+        ("Нужна помощь", "help"),
+        ("Не знаю что спросить", "other"),
+        ("Просто тест", "other"),
+        ("Как дела", "other"),
+        ("Что нового", "other"),
+        ("Расскажи что-нибудь", "other"),
+    ]
+
+    for текст, метка in примеры:
+        тексты.append(текст)
+        метки.append(метка)
+
+    return тексты, метки
+
+if __name__ == "__main__":
+    """
+    Скрипт для обучения модели. Запускается отдельно.
+    """
     print("Создание обучающих данных...")
-    texts, labels = create_training_data()
-    
+    тексты, метки = создать_обучающие_данные()
+
     print("Инициализация классификатора...")
-    classifier = PetStoreIntentClassifier()
-    
+    классификатор = PetStoreIntentClassifier()
+
     print("Подготовка данных для обучения...")
-    X, y = classifier.prepare_data(texts, labels)
-    
+    X, y = классификатор.подготовить_данные(тексты, метки)
+
     print("Обучение модели...")
-    history = classifier.train(X, y, epochs=50, batch_size=16)
-    
+    история = классификатор.обучить(X, y, epochs=50, batch_size=16)
+
     print("Сохранение модели...")
-    classifier.save_model('ai_model/pet_store_model')
-    
-    print("Обучение завершено! Модель сохранена в директории 'ai_model/pet_store_model'")
+    классификатор.сохранить_модель('ai_model/pet_store_model')
+
+    print("Обучение завершено! Модель сохранена в 'ai_model/pet_store_model'")
