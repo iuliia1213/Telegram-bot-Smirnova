@@ -16,6 +16,15 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Конфигурационный класс для гиперпараметров модели
+class Config:
+    VOCAB_SIZE = 10000  # Максимальный размер словаря
+    MAX_SEQUENCE_LENGTH = 100  # Максимальная длина входной последовательности
+    EMBEDDING_SIZE = 128  # Размерность векторных представлений слов
+    BATCH_SIZE = 32  # Размер батча для обучения
+    EPOCHS = 50  # Количество эпох обучения
+    VALIDATION_SPLIT = 0.2  # Доля данных для валидации
+
 # Определение намерений пользователя для классификации
 INTENTS = [
     "find_product",           # Поиск товара
