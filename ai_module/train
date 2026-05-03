@@ -62,18 +62,20 @@ class PetStoreIntentClassifier:
         self.model = None
 
     # Подготовим данные для обучения: токенизация и кодирование меток   
-    def подготовить_данные(self, тексты: List[str], метки: List[str]) -> Tuple[np.ndarray, np.ndarray]:
+    def подготовить_данные(self, texts: List[str], labels: List[str]) -> Tuple[np.ndarray, np.ndarray]:
         
         # Обучение токенизатора на всех текстах
-        self.tokenizer.fit_on_texts(тексты)
-        последовательности = self.tokenizer.texts_to_sequences(тексты)
-        отформатированные_последовательности = pad_sequences(последовательности, maxlen=self.max_sequence_length, 
+        self.tokenizer.fit_on_texts(texts)
+        # Преобразование текстов в последовательности чисел
+        sequences = self.tokenizer.texts_to_sequences(texts)
+        # Обрезка или дополнение последовательностей до max_sequence_length
+        X = pad_sequences(sequences, maxlen=self.max_sequence_length, 
                                          padding='post', truncating='post')
         
         # Кодирование меток в числа
-        закодированные_метки = self.label_encoder.fit_transform(метки)
+        y = self.label_encoder.fit_transform(labels)
         
-        return отформатированные_последовательности, закодированные_метки
+        return X, y
     
     # Создадим архитектуры нейросети
     def построить_модель(self) -> tf.keras.Model:
