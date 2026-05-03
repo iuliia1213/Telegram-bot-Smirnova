@@ -7,7 +7,7 @@ from tensorflow.keras import layers, models
 from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from sklearn.preprocessing import LabelEncoder
-from typing import List, Tuple, Dict
+from typing import List, Tuple
 from sklearn.model_selection import train_test_split
 import pickle
 import os
@@ -143,6 +143,7 @@ class PetStoreIntentClassifier:
     return history
     # Метод для сохранения модели и компонентов
     def save_model(self, путь: str):
+
         # Создаем каталог, если его нет
         os.makedirs(путь, exist_ok=True)
 
@@ -169,27 +170,28 @@ class PetStoreIntentClassifier:
 
     # Классметод для загрузки модели из каталога
     @classmethod
-    def load_from_file(cls, путь: str):
+    def load_from_file(cls, путь: str) -> 'PetStoreIntentClassifier':
         # Загружаем конфигурацию
         with open(os.path.join(путь, 'config.json'), 'r', encoding='utf-8') as f:
             config_data = json.load(f)
 
         # Создаем экземпляр класса
         instance = cls()
+
         # Загружаем параметры
         instance.vocab_size = config_data['vocab_size']
         instance.max_sequence_length = config_data['max_sequence_length']
         instance.embedding_size = config_data['embedding_size']
 
         # Загружаем компоненты
-        with open(os.path.join(путь, 'tokenizer.pkl'), 'rb') as f:
+        with open(os.path.join(path, 'tokenizer.pkl'), 'rb') as f:
             instance.tokenizer = pickle.load(f)
 
-        with open(os.path.join(путь, 'label_encoder.pkl'), 'rb') as f:
+        with open(os.path.join(path, 'label_encoder.pkl'), 'rb') as f:
             instance.label_encoder = pickle.load(f)
 
         # Загружаем модель
-        instance.model = tf.keras.models.load_model(os.path.join(путь, 'model.h5'))
+        instance.model = tf.keras.models.load_model(os.path.join(path, 'model.h5'))
 
         return instance
 
