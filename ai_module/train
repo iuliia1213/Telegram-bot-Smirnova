@@ -8,6 +8,7 @@ from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from sklearn.preprocessing import LabelEncoder
 from typing import List, Tuple, Dict
+from sklearn.model_selection import train_test_split
 import pickle
 import os
 import logging
@@ -246,23 +247,29 @@ def создать_обучающие_данные() -> Tuple[List[str], List[st
 
     return тексты, метки
 
+# Основной блок запуска
 if __name__ == "__main__":
-    """
-    Скрипт для обучения модели. Запускается отдельно.
-    """
-    print("Создание обучающих данных...")
-    тексты, метки = создать_обучающие_данные()
+# Создадим и обучим модель 
+    import sys
 
-    print("Инициализация классификатора...")
-    классификатор = PetStoreIntentClassifier()
+    logging.info("Создание набора данных...")
+    texts, labels = создать_набор_данных()
 
-    print("Подготовка данных для обучения...")
-    X, y = классификатор.подготовить_данные(тексты, метки)
+    logging.info("Инициализация классификатора...")
+    classifier = PetStoreIntentClassifier()
 
-    print("Обучение модели...")
-    история = классификатор.обучить(X, y, epochs=50, batch_size=16)
+    logging.info("Подготовка данных...")
+    X, y = classifier.подготовить_данные(texts, labels)
 
-    print("Сохранение модели...")
-    классификатор.сохранить_модель('ai_model/pet_store_model')
+    # Делим на обучающую и тестовую выборки
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42
+    )
 
-    print("Обучение завершено! Модель сохранена в 'ai_model/pet_store_model'")
+    logging.info("Обучение модели...")
+    classifier.обучить(X_train, y_train, X_test, y_test)
+
+    # Сохраняем модель
+    save_path = 'ai_model/pet_store_model'
+    classifier.сохранить_модель(save_path)
+    logging.info(f"Обучение завершено! Модель сохранена в {save_path}")
