@@ -199,15 +199,20 @@ class PetStoreIntentClassifier:
 
     # Предскажем намерения по новому тексту
     def предсказать(self, текст: str) -> Tuple[str, float]:
-        
-        последовательность = self.tokenizer.texts_to_sequences([текст])
-        отформатированный_вход = pad_sequences(последовательность, maxlen=self.max_sequence_length,
+
+        # Преобразуем текст в последовательность
+        sequence = self.tokenizer.texts_to_sequences([текст])
+        # Обрезка или дополнение
+        X_input = pad_sequences(sequence, maxlen=self.max_sequence_length,
                               padding='post', truncating='post')
-        прогнозы = self.model.predict(отформатированный_вход, verbose=0)[0]
-        класс_предсказания = np.argmax(прогнозы)
-        уверенность = прогнозы[класс_предсказания]
-        намерение = self.label_encoder.inverse_transform([класс_предсказания])[0]
-        return намерение, float(уверенность)
+        # Предсказание
+        predictions  = self.model.predict(X_input, verbose=0)[0]
+        # Определение класса с наибольшей вероятностью
+        pred_class = np.argmax(predictions)
+        confidence  = predictions[pred_class]
+        # Обратное преобразование метки
+        intent  = self.label_encoder.inverse_transform([pred_class])[0]
+        return intent, float(confidence)
     
     # Сохранение модели и компонентов
     def сохранить_модель(self, путь: str):
