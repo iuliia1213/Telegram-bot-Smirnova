@@ -80,16 +80,25 @@ class PetStoreIntentClassifier:
     # Создадим архитектуры нейросети
     def построить_модель(self) -> tf.keras.Model:
 
-        модель = models.Sequential([
+        модель = models.Sequential([ 
+            # Создаем последовательную модель
+            # Встроенный слой для превращения слов в плотные векторные представления
             layers.Embedding(self.vocab_size, self.embedding_size, input_length=self.max_sequence_length),
+            # Двунаправленный слой LSTM для обработки последовательностей
             layers.Bidirectional(layers.LSTM(64, return_sequences=True)),
+            # Регуляризация Dropout
             layers.Dropout(0.3),
+            # Еще один слой LSTM
             layers.Bidirectional(layers.LSTM(32)),
+            # Еще Dropout
             layers.Dropout(0.3),
+            # Полносвязный слой перед выходом
             layers.Dense(64, activation='relu'),
             layers.Dropout(0.2),
+            # Выходной слой с количеством нейронов равным числу классов
             layers.Dense(len(INTENTS), activation='softmax')
         ])
+        # Компиляция модели с оптимизатором и функцией потерь
         модель.compile(
             optimizer='adam',
             loss='sparse_categorical_crossentropy',
