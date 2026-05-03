@@ -162,7 +162,8 @@ class PetStoreIntentClassifier:
             config_data = {
                 'vocab_size': self.vocab_size,
                 'max_sequence_length': self.max_sequence_length,
-                'embedding_size': self.embedding_size
+                'embedding_size': self.embedding_size,
+                'intents': INTENTS
             }
 
             with open(os.path.join(path, 'config.json'), 'w', encoding='utf-8') as f:
