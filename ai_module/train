@@ -108,28 +108,95 @@ class PetStoreIntentClassifier:
         return модель
     
     # Обучим модель 
-    def обучить(self, X_train: np.ndarray, y_train: np.ndarray, 
-                epochs: int = 20, batch_size: int = 32,
-                validation_split: float = 0.2) -> tf.keras.callbacks.History:
-       
-        if self.model is None:
+    def обучить(self, X: np.ndarray, y: np.ndarray, X_test: np.ndarray = None, y_test: np.ndarray = None):
+        # Если модель еще не создана, создаем
+            if self.model is None:
             self.построить_модель()
-        
-        ранняя_остановка = tf.keras.callbacks.EarlyStopping(
+
+        # Настройка callback для ранней остановки обучения
+        early_stop = tf.keras.callbacks.EarlyStopping(
             monitor='val_loss',
             patience=5,
             restore_best_weights=True
         )
+        # Обучение с использованием тестового набора или validation split
+        if X_test is not None and y_test is not None:
+        # Обучение с отдельным тестовым набором
         история = self.model.fit(
-            X_train, y_train,
-            epochs=epochs,
-            batch_size=batch_size,
-            validation_split=validation_split,
-            callbacks=[ранняя_остановка],
+            X, y,
+            epochs=self.epochs,
+            batch_size=self.batch_size,
+            validation_data=(X_test, y_test),
+            callbacks=[early_stop],
             verbose=1
         )
+        else:
+            # Обучение с использованием validation_split
+            история = self.model.fit(
+                X, y,
+                epochs=self.epochs,
+                batch_size=self.batch_size,
+                validation_split=self.validation_split,
+                callbacks=[early_stop],
+                verbose=1
+          )
         return история
-    
+    # Метод для сохранения модели и компонентов
+    def сохранить_модель(self, путь: str):
+        # Создаем каталог, если его нет
+        os.makedirs(путь, exist_ok=True)
+
+        # Сохраняем модель Keras
+        self.model.save(os.path.join(путь, 'model.h5'))
+
+        # Сохраняем токенизатор
+        with open(os.path.join(путь, 'tokenizer.pkl'), 'wb') as f:
+            pickle.dump(self.tokenizer, f)
+
+        # Сохраняем метки
+        with open(os.path.join(путь, 'label_encoder.pkl'), 'wb') as f:
+            pickle.dump(self.label_encoder, f)
+
+        # Сохраняем конфигурацию в json
+        конфиг = {
+            'vocab_size': self.vocab_size,
+            'max_sequence_length': self.max_sequence_length,
+            'embedding_size': self.embedding_size
+        }
+        with open(os.path.join(путь, 'config.json'), 'w', encoding='utf-8') as f:
+            json.dump(конфиг, f, ensure_ascii=False, indent=2)
+        logging.info(f"Модель успешно сохранена в {путь}")
+
+    # Классметод для загрузки модели из каталога
+    @classmethod
+    def загрузить_из_файла(cls, путь: str):
+        # Загружаем конфигурацию
+        with open(os.path.join(путь, 'config.json'), 'r', encoding='utf-8') as f:
+            конфиг = json.load(f)
+
+        # Создаем экземпляр класса
+        экземпляр = cls()
+        # Загружаем параметры
+        экземпляр.vocab_size = конфиг['vocab_size']
+        экземпляр.max_sequence_length = конфиг['max_sequence_length']
+        экземпляр.embedding_size = конфиг['embedding_size']
+
+        # Загружаем компоненты
+        with open(os.path.join(путь, 'tokenizer.pkl'), 'rb') as f:
+            экземпляр.tokenizer = pickle.load(f)
+
+        with open(os.path.join(путь, 'label_encoder.pkl'), 'rb') as f:
+            экземпляр.label_encoder = pickle.load(f)
+
+        # Загружаем модель
+        экземпляр.model = tf.keras.models.load_model(os.path.join(путь, 'model.h5'))
+
+        return экземпляр
+
+    # Метод для оценки модели
+    def оценить(self, X_test: np.ndarray, y_test: np.ndarray):
+        return self.model.evaluate(X_test, y_test)
+
     # Предскажем намерения по новому тексту
     def предсказать(self, текст: str) -> Tuple[str, float]:
         
