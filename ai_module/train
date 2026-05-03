@@ -7,7 +7,7 @@ from tensorflow.keras import layers, models
 from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from sklearn.preprocessing import LabelEncoder
-from typing import List, Tuple
+from typing import List, Tuple, Dict
 from sklearn.model_selection import train_test_split
 import pickle
 import os
@@ -109,70 +109,76 @@ class PetStoreIntentClassifier:
     
     # Обучим модель
     def train(self, X: np.ndarray, y: np.ndarray, X_test: np.ndarray = None, y_test: np.ndarray = None):
-    # Если модель еще не создана, создаем
-    if self.model is None:
-        self.build_model()
+        # Если модель еще не создана, создаем
+        if self.model is None:
+            self.build_model()
 
-    # Настройка callback для ранней остановки обучения
-    early_stop = tf.keras.callbacks.EarlyStopping(
-        monitor='val_loss',
-        patience=5,
-        restore_best_weights=True
-    )
-    # Обучение с использованием тестового набора или validation split
-    if X_test is not None and y_test is not None:
-        # Обучение с отдельным тестовым набором
-        history = self.model.fit(
+        # Настройка callback для ранней остановки обучения
+        early_stop = tf.keras.callbacks.EarlyStopping(
+            monitor='val_loss',
+            patience=5,
+            restore_best_weights=True
+        )
+        # Обучение с использованием тестового набора или validation split
+        if X_test is not None and y_test is not None:
+            # Обучение с отдельным тестовым набором
+            history = self.model.fit(
             X, y,
             epochs=self.epochs,
             batch_size=self.batch_size,
             validation_data=(X_test, y_test),
             callbacks=[early_stop],
             verbose=1
-        )
-    else:
-        # Обучение с использованием validation_split
-        history = self.model.fit(
-            X, y,
-            epochs=self.epochs,
-            batch_size=self.batch_size,
-            validation_split=self.validation_split,
-            callbacks=[early_stop],
-            verbose=1
-        )
-    return history
-    # Метод для сохранения модели и компонентов
-    def save_model(self, путь: str):
+         )
+        else:
+            # Обучение с использованием validation_split
+            history = self.model.fit(
+                X, y,
+                epochs=self.epochs,
+                batch_size=self.batch_size,
+                validation_split=self.validation_split,
+                callbacks=[early_stop],
+                verbose=1
+             )
+        return history
 
-        # Создаем каталог, если его нет
-        os.makedirs(путь, exist_ok=True)
+    # Сохранение модели и компонентов
+    def save_model(self, path: str):
+        try:
+            # Создаем каталог, если его нет
+            os.makedirs(path, exist_ok=True)
+            # Сохраняем модель Keras
+            self.model.save(os.path.join(path, 'model.h5'))
 
-        # Сохраняем модель Keras
-        self.model.save(os.path.join(путь, 'model.h5'))
-
-        # Сохраняем токенизатор
-        with open(os.path.join(путь, 'tokenizer.pkl'), 'wb') as f:
+            # Сохраняем токенизатор
+            with open(os.path.join(path, 'tokenizer.pkl'), 'wb') as f:
             pickle.dump(self.tokenizer, f)
 
-        # Сохраняем метки
-        with open(os.path.join(путь, 'label_encoder.pkl'), 'wb') as f:
+            # Сохраняем метки
+            with open(os.path.join(path, 'label_encoder.pkl'), 'wb') as f:
             pickle.dump(self.label_encoder, f)
 
-        # Сохраняем конфигурацию в json
-        config_data = {
-            'vocab_size': self.vocab_size,
-            'max_sequence_length': self.max_sequence_length,
-            'embedding_size': self.embedding_size
-        }
-        with open(os.path.join(путь, 'config.json'), 'w', encoding='utf-8') as f:
-            json.dump(config_data, f, ensure_ascii=False, indent=2)
-        logging.info(f"model успешно сохранена в {путь}")
+            # Сохраняем конфигурацию в json
+            config_data = {
+                'vocab_size': self.vocab_size,
+                'max_sequence_length': self.max_sequence_length,
+                'embedding_size': self.embedding_size
+            }
 
-    # Классметод для загрузки модели из каталога
+            with open(os.path.join(path, 'config.json'), 'w', encoding='utf-8') as f:
+            json.dump(config_data, f, ensure_ascii=False, indent=2)
+
+            logging.info(f"model успешно сохранена в {path}")
+      
+      except Exception as e:
+          logging.error(f"Ошибка при сохранении модели: {e}")
+          raise
+
+    # Загрузка модели из каталога
     @classmethod
-    def load_from_file(cls, путь: str) -> 'PetStoreIntentClassifier':
+    def load_from_file(cls, path: str) -> 'PetStoreIntentClassifier':
         # Загружаем конфигурацию
-        with open(os.path.join(путь, 'config.json'), 'r', encoding='utf-8') as f:
+        with open(os.path.join(path, 'config.json'), 'r', encoding='utf-8') as f:
             config_data = json.load(f)
 
         # Создаем экземпляр класса
@@ -192,7 +198,6 @@ class PetStoreIntentClassifier:
 
         # Загружаем модель
         instance.model = tf.keras.models.load_model(os.path.join(path, 'model.h5'))
-
         return instance
 
     # Метод для оценки модели
@@ -201,7 +206,6 @@ class PetStoreIntentClassifier:
 
     # Предскажем намерения по новому тексту
     def predict(self, text: str) -> Tuple[str, float]:
-
         # Преобразуем текст в последовательность
         sequence = self.tokenizer.texts_to_sequences([text])
         # Обрезка или дополнение
@@ -216,49 +220,7 @@ class PetStoreIntentClassifier:
         intent  = self.label_encoder.inverse_transform([pred_class])[0]
         return intent, float(confidence)
     
-    # Сохранение модели и компонентов
-    def save_model(self, путь: str):
-        
-        os.makedirs(путь, exist_ok=True)
-        self.model.save(os.path.join(путь, 'model.h5'))
-        with open(os.path.join(путь, 'tokenizer.pkl'), 'wb') as f:
-            pickle.dump(self.tokenizer, f)
-        with open(os.path.join(путь, 'label_encoder.pkl'), 'wb') as f:
-            pickle.dump(self.label_encoder, f)
-        config_data = {
-            'vocab_size': self.vocab_size,
-            'max_sequence_length': self.max_sequence_length,
-            'embedding_size': self.embedding_size,
-            'intents': INTENTS
-        }
-        with open(os.path.join(путь, 'config.json'), 'w', encoding='utf-8') as f:
-            json.dump(config_data, f, ensure_ascii=False, indent=2)
-    
-    @classmethod
-    # Загрузим модели из файла
-    def load_from_file(cls, путь: str) -> 'PetStoreIntentClassifier':
-
-        with open(os.path.join(путь, 'config.json'), 'r', encoding='utf-8') as f:
-            config_data = json.load(f)
-
-        # Создаем новый экземпляр
-        классификатор = cls(
-            vocab_size=config_data['vocab_size'],
-            max_sequence_length=config_data['max_sequence_length'],
-            embedding_size=config_data['embedding_size']
-        )
-
-        # Загружаем компоненты
-        with open(os.path.join(путь, 'tokenizer.pkl'), 'rb') as f:
-            классификатор.tokenizer = pickle.load(f)
-        with open(os.path.join(путь, 'label_encoder.pkl'), 'rb') as f:
-            классификатор.label_encoder = pickle.load(f)
-
-        # Загружаем model
-        классификатор.model = tf.keras.models.load_model(os.path.join(путь, 'model.h5'))
-        return классификатор
-
-# Создадим тренировочный набор данных для обучения
+    # Создадим тренировочный набор данных для обучения
 def create_dataset() -> Tuple[List[str], List[str]]:
     
     texts = []
