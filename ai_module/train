@@ -109,18 +109,18 @@ class PetStoreIntentClassifier:
     
     # Обучим модель
     def train(self, X: np.ndarray, y: np.ndarray, X_test: np.ndarray = None, y_test: np.ndarray = None):
-        # Если модель еще не создана, создаем
-            if self.model is None:
-            self.build_model()
+    # Если модель еще не создана, создаем
+    if self.model is None:
+        self.build_model()
 
-        # Настройка callback для ранней остановки обучения
-        early_stop = tf.keras.callbacks.EarlyStopping(
-            monitor='val_loss',
-            patience=5,
-            restore_best_weights=True
-        )
-        # Обучение с использованием тестового набора или validation split
-        if X_test is not None and y_test is not None:
+    # Настройка callback для ранней остановки обучения
+    early_stop = tf.keras.callbacks.EarlyStopping(
+        monitor='val_loss',
+        patience=5,
+        restore_best_weights=True
+    )
+    # Обучение с использованием тестового набора или validation split
+    if X_test is not None and y_test is not None:
         # Обучение с отдельным тестовым набором
         history = self.model.fit(
             X, y,
@@ -130,17 +130,17 @@ class PetStoreIntentClassifier:
             callbacks=[early_stop],
             verbose=1
         )
-        else:
-            # Обучение с использованием validation_split
-            history = self.model.fit(
-                X, y,
-                epochs=self.epochs,
-                batch_size=self.batch_size,
-                validation_split=self.validation_split,
-                callbacks=[early_stop],
-                verbose=1
-          )
-        return history
+    else:
+        # Обучение с использованием validation_split
+        history = self.model.fit(
+            X, y,
+            epochs=self.epochs,
+            batch_size=self.batch_size,
+            validation_split=self.validation_split,
+            callbacks=[early_stop],
+            verbose=1
+        )
+    return history
     # Метод для сохранения модели и компонентов
     def save_model(self, путь: str):
         # Создаем каталог, если его нет
@@ -234,7 +234,7 @@ class PetStoreIntentClassifier:
     
     @classmethod
     # Загрузим модели из файла
-    def загрузить_model(cls, путь: str) -> 'PetStoreIntentClassifier':
+    def load_from_file(cls, путь: str) -> 'PetStoreIntentClassifier':
 
         with open(os.path.join(путь, 'config.json'), 'r', encoding='utf-8') as f:
             config_data = json.load(f)
