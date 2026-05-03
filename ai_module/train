@@ -81,7 +81,7 @@ class PetStoreIntentClassifier:
     def build_model(self) -> tf.keras.Model:
 
         model = models.Sequential([ 
-            # Создаем последовательную model
+            # Создаем последовательную модель
             # Встроенный слой для превращения слов в плотные векторные представления
             layers.Embedding(self.vocab_size, self.embedding_size, input_length=self.max_sequence_length),
             # Двунаправленный слой LSTM для обработки последовательностей
@@ -107,9 +107,9 @@ class PetStoreIntentClassifier:
         self.model = model
         return model
     
-    # Обучим model 
+    # Обучим модель
     def train(self, X: np.ndarray, y: np.ndarray, X_test: np.ndarray = None, y_test: np.ndarray = None):
-        # Если model еще не создана, создаем
+        # Если модель еще не создана, создаем
             if self.model is None:
             self.build_model()
 
@@ -146,7 +146,7 @@ class PetStoreIntentClassifier:
         # Создаем каталог, если его нет
         os.makedirs(путь, exist_ok=True)
 
-        # Сохраняем model Keras
+        # Сохраняем модель Keras
         self.model.save(os.path.join(путь, 'model.h5'))
 
         # Сохраняем токенизатор
@@ -188,7 +188,7 @@ class PetStoreIntentClassifier:
         with open(os.path.join(путь, 'label_encoder.pkl'), 'rb') as f:
             instance.label_encoder = pickle.load(f)
 
-        # Загружаем model
+        # Загружаем модель
         instance.model = tf.keras.models.load_model(os.path.join(путь, 'model.h5'))
 
         return instance
