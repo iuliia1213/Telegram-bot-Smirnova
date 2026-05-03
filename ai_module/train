@@ -47,15 +47,17 @@ INTENTS = [
 class PetStoreIntentClassifier:
 
     # Инициализация классификатора  
-    def __init__(self, vocab_size: int = 10000, max_sequence_length: int = 100,
-                 embedding_size: int = 128):
+    def __init__(self, config=Config):
+        self.vocab_size = config.VOCAB_SIZE
+        self.max_sequence_length = config.MAX_SEQUENCE_LENGTH
+        self.embedding_size = config.EMBEDDING_SIZE
+        self.batch_size = config.BATCH_SIZE
+        self.epochs = config.EPOCHS
+        self.validation_split = config.VALIDATION_SPLIT
+
         
-        self.vocab_size = vocab_size
-        self.max_sequence_length = max_sequence_length
-        self.embedding_size = embedding_size
-        
-        # Инициализация компонентов предобработки текста
-        self.tokenizer = Tokenizer(num_words=vocab_size, oov_token="<OOV>")
+        # Инициализация компонентов предобработки текста и меток
+        self.tokenizer = Tokenizer(num_words=self.vocab_size, oov_token="<OOV>")
         self.label_encoder = LabelEncoder()
         self.model = None
 
