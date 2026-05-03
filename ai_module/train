@@ -107,7 +107,7 @@ class PetStoreIntentClassifier:
         self.model = model
         return model
     
-    # Обучим model 
+    # Обучим модель 
     def train(self, X: np.ndarray, y: np.ndarray, X_test: np.ndarray = None, y_test: np.ndarray = None):
         # Если model еще не создана, создаем
             if self.model is None:
@@ -141,12 +141,13 @@ class PetStoreIntentClassifier:
                 verbose=1
           )
         return history
+    
     # Метод для сохранения модели и компонентов
     def save_model(self, путь: str):
         # Создаем каталог, если его нет
         os.makedirs(путь, exist_ok=True)
 
-        # Сохраняем model Keras
+        # Сохраняем модель Keras
         self.model.save(os.path.join(путь, 'model.h5'))
 
         # Сохраняем токенизатор
@@ -170,28 +171,48 @@ class PetStoreIntentClassifier:
     # Классметод для загрузки модели из каталога
     @classmethod
     def load_from_file(cls, путь: str):
+        # Загружаем модель из указанной директории
+        try:
         # Загружаем конфигурацию
-        with open(os.path.join(путь, 'config.json'), 'r', encoding='utf-8') as f:
+        config_path = os.path.join(path, 'config.json')
+        if not os.path.exists(config_path):
+            raise FileNotFoundError(f"Файл конфигурации не найден: {config_path}")
+
+        with open(config_path,, 'r', encoding='utf-8') as f:
             config_data = json.load(f)
 
         # Создаем экземпляр класса
         instance = cls()
+
         # Загружаем параметры
         instance.vocab_size = config_data['vocab_size']
         instance.max_sequence_length = config_data['max_sequence_length']
         instance.embedding_size = config_data['embedding_size']
 
-        # Загружаем компоненты
-        with open(os.path.join(путь, 'tokenizer.pkl'), 'rb') as f:
+        # Загружаем токенизатор
+        tokenizer_path = os.path.join(path, 'tokenizer.pkl')
+        with open(tokenizer_path, 'rb') as f:
             instance.tokenizer = pickle.load(f)
 
-        with open(os.path.join(путь, 'label_encoder.pkl'), 'rb') as f:
+        # Загружаем LabelEncoder
+        encoder_path = os.path.join(path, 'label_encoder.pkl')
+        with open(encoder_path, 'rb') as f:
             instance.label_encoder = pickle.load(f)
 
-        # Загружаем model
-        instance.model = tf.keras.models.load_model(os.path.join(путь, 'model.h5'))
+        # Загружаем модель
+        model_path = os.path.join(path, 'model.h5')
+        instance.model = tf.keras.models.load_model(model_path)
 
+        logging.info(f"Модель успешно загружена из {path}")
         return instance
+
+    except FileNotFoundError as e:
+        logging.error(f"Файл не найден: {e}")
+        raise
+    
+    except Exception as e:
+        logging.error(f"Ошибка при загрузке модели из {path}: {e}")
+        raise
 
     # Метод для оценки модели
     def evaluate(self, X_test: np.ndarray, y_test: np.ndarray):
