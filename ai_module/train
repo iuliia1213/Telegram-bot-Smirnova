@@ -256,11 +256,11 @@ class PetStoreIntentClassifier:
         классификатор.model = tf.keras.models.load_model(os.path.join(путь, 'model.h5'))
         return классификатор
 
-# Создадим тренировочный набор данных
-def создать_обучающие_данные() -> Tuple[List[str], List[str]]:
+# Создадим тренировочный набор данных для обучения
+def создать_набор_данных() -> Tuple[List[str], List[str]]:
     
-    тексты = []
-    метки = []
+    texts = []
+    labels = []
 
     # Примеры запросов для обучения
     примеры = [
@@ -326,15 +326,16 @@ def создать_обучающие_данные() -> Tuple[List[str], List[st
         ("Расскажи что-нибудь", "other"),
     ]
 
+    # Заполняем списки
     for текст, метка in примеры:
-        тексты.append(текст)
-        метки.append(метка)
+        texts.append(текст)
+        labels.append(метка)
 
-    return тексты, метки
+    return texts, labels
 
 # Основной блок запуска
 if __name__ == "__main__":
-# Создадим и обучим модель 
+    # Создадим и обучим модель 
     import sys
 
     logging.info("Создание набора данных...")
