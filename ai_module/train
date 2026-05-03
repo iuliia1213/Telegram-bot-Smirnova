@@ -81,7 +81,7 @@ class PetStoreIntentClassifier:
     def build_model(self) -> tf.keras.Model:
 
         model = models.Sequential([ 
-            # Создаем последовательную model
+            # Создаем последовательную модель
             # Встроенный слой для превращения слов в плотные векторные представления
             layers.Embedding(self.vocab_size, self.embedding_size, input_length=self.max_sequence_length),
             # Двунаправленный слой LSTM для обработки последовательностей
@@ -107,7 +107,7 @@ class PetStoreIntentClassifier:
         self.model = model
         return model
     
-    # Обучим model 
+    # Обучим модель 
     def train(self, X: np.ndarray, y: np.ndarray, X_test: np.ndarray = None, y_test: np.ndarray = None):
         # Если model еще не создана, создаем
             if self.model is None:
@@ -146,7 +146,7 @@ class PetStoreIntentClassifier:
         # Создаем каталог, если его нет
         os.makedirs(путь, exist_ok=True)
 
-        # Сохраняем model Keras
+        # Сохраняем модель Keras
         self.model.save(os.path.join(путь, 'model.h5'))
 
         # Сохраняем токенизатор
@@ -199,6 +199,8 @@ class PetStoreIntentClassifier:
 
     # Предскажем намерения по новому тексту
     def predict(self, text: str) -> Tuple[str, float]:
+        if self.model is None:
+        raise ValueError("Модель не загружена. Вызовите построить_модель() или загрузить_из_файла()")
 
         # Преобразуем текст в последовательность
         sequence = self.tokenizer.texts_to_sequences([text])
