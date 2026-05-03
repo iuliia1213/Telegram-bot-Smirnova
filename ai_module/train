@@ -11,6 +11,7 @@ from typing import List, Tuple, Dict
 import pickle
 import os
 import logging
+from sklearn.model_selection import train_test_split
 
 # Настройка логирования для отслеживания процессов
 logging.basicConfig(level=logging.INFO)
@@ -25,7 +26,7 @@ class Config:
     EPOCHS = 50  # Количество эпох обучения
     VALIDATION_SPLIT = 0.2  # Доля данных для валидации
 
-# Определение намерений пользователя для классификации
+# Определение намерений пользователя для классификации,список возможных интентов
 INTENTS = [
     "find_product",           # Поиск товара
     "get_product_info",       # Получение информации о товаре
@@ -46,13 +47,15 @@ INTENTS = [
 class PetStoreIntentClassifier:
 
     # Инициализация классификатора  
-    def __init__(self, vocab_size: int = 10000, max_sequence_length: int = 100,
-                 embedding_size: int = 128):
+    def __init__(self, config=Config):
         
-        self.vocab_size = vocab_size
-        self.max_sequence_length = max_sequence_length
-        self.embedding_size = embedding_size
-        
+        self.vocab_size = config.VOCAB_SIZE
+        self.max_sequence_length = config.MAX_SEQUENCE_LENGTH
+        self.embedding_size = config.EMBEDDING_SIZE
+        self.batch_size = config.BATCH_SIZE
+        self.epochs = config.EPOCHS
+        self.validation_split = config.VALIDATION_SPLIT
+
         # Инициализация компонентов предобработки текста
         self.tokenizer = Tokenizer(num_words=vocab_size, oov_token="<OOV>")
         self.label_encoder = LabelEncoder()
