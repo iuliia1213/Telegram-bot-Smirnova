@@ -178,7 +178,7 @@ class PredictionCache:
 class PetStoreIntentClassifier:
 
     # Инициализация классификатора  
-    def __init__(self, config=None):
+    def __init__(self, config = None):
         if config is None:            
             self.config = Config()    
         else:                         
@@ -200,8 +200,35 @@ class PetStoreIntentClassifier:
         self.training_history = None # Пока нет истории
 
         # Кэш
-    self.cache = PredictionCache(max_size=self.config.CACHE_SIZE) if self.config.USE_CACHE else None
-
+        self.cache = PredictionCache(max_size=self.config.CACHE_SIZE) if self.config.USE_CACHE else None
+        self.embedding_matrix = None
+        if self.config.USE_PRETRAINED_EMBEDDINGS and FASTTEXT_AVAILABLE:
+            self._load_pretrained_embeddings()
+    
+    def _load_pretrained_embeddings(self):
+        try:
+            ft = fasttext.load_model(self.config.PRETRAINED_EMBEDDINGS_PATH)
+            logger.info(f"Загружены предобученные эмбеддинги")
+        except Exception as e:
+            logger.error(f"Ошибка загрузки эмбеддингов: {e}")
+            self.config.USE_PRETRAINED_EMBEDDINGS = False
+    
+    def _create_embedding_matrix(self, word_index: Dict) -> np.ndarray:
+        if not self.config.USE_PRETRAINED_EMBEDDINGS or not FASTTEXT_AVAILABLE:
+            return None
+        
+        embedding_matrix = np.zeros((self.vocab_size, self.embedding_size))
+        ft = fasttext.load_model(self.config.PRETRAINED_EMBEDDINGS_PATH)
+        
+        for word, i in word_index.items():
+            if i < self.vocab_size:
+                try:
+                    embedding_matrix[i] = ft.get_word_vector(word)
+                except:
+                    embedding_matrix[i] = np.random.normal(size=(self.embedding_size,))
+        
+        return embedding_matrix
+        
     def _preprocess_text(self, text: str) -> str:  
         # Приведение к нижнему регистру
         text = text.lower()
