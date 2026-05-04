@@ -29,6 +29,24 @@ class Config:
     EPOCHS = 50  # Количество эпох обучения
     VALIDATION_SPLIT = 0.2  # Доля данных для валидации
 
+    # Архитектура
+    USE_ATTENTION = True          # Механизм внимания
+    USE_GRU = False               #  GRU вместо LSTM
+    USE_PRETRAINED_EMBEDDINGS = False
+
+    # Регуляризация
+    DROPOUT_RATE = 0.3
+    RECURRENT_DROPOUT = 0.2
+    L2_REGULARIZATION = 0.001
+
+    # Обучение
+    INITIAL_LEARNING_RATE = 0.001
+    USE_LEARNING_RATE_SCHEDULING = True
+    REDUCE_LR_FACTOR = 0.5
+    REDUCE_LR_PATIENCE = 3
+    GRADIENT_CLIP_NORM = 1.0
+   
+
 # Определение намерений пользователя для классификации
 INTENTS = [
     "find_product",           # Поиск товара
