@@ -313,8 +313,15 @@ class PetStoreIntentClassifier:
             )
             callbacks_list.append(reduce_lr)
             
-        # Model checkpoint
-        
+        # Model checkpoint (Сохраняет лучшую модель)
+        checkpoint = tf.keras.callbacks.ModelCheckpoint(
+            'best_model.h5',
+            monitor='val_accuracy' if X_val is not None else 'accuracy',
+            save_best_only=True,
+            mode='max',
+            verbose=1
+        )
+        callbacks_list.append(checkpoint)
         
 
             return history
