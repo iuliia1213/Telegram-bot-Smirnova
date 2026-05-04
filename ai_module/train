@@ -205,6 +205,13 @@ class PetStoreIntentClassifier:
         clean_text = self._preprocess_text(text) 
         processed_texts.append(clean_text)
         processed_labels.append(label)
+
+        # Аугментация 
+        if augment and self.config.USE_DATA_AUGMENTATION:
+            augmented_texts = self._augment_text(clean_text)
+            for aug_text in augmented_texts[1:]:
+                processed_texts.append(aug_text)
+                processed_labels.append(label)
                    
         self.tokenizer.fit_on_texts(processed_texts)
         sequences = self.tokenizer.texts_to_sequences(processed_texts)
