@@ -27,10 +27,10 @@ from sklearn.model_selection import StratifiedKFold
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-# Попытка импорта дополнительных библиотек
+# Попытка импорта дополнительных библиотек для лемматизации и предобученных эмбеддингов
 try:
     import pymorphy2
-    MORPH = pymorphy2.MorphAnalyzer()
+    MORPH = pymorphy2.MorphAnalyzer() # Анализатор для лемматизации
     LEMMATIZATION_AVAILABLE = True
 except ImportError:
     LEMMATIZATION_AVAILABLE = False
@@ -57,8 +57,9 @@ try:
 except ImportError:
     ONNX_AVAILABLE = False
 
-# Конфигурационный класс для гиперпараметров модели
-class Config:
+# Конфигурационный класс с гиперпараметрами и настройками модели
+class Config: 
+    # Основные параметры модели
     VOCAB_SIZE = 10000  # Максимальный размер словаря
     MAX_SEQUENCE_LENGTH = 100  # Максимальная длина входной последовательности
     EMBEDDING_SIZE = 128  # Размерность векторных представлений слов
@@ -66,7 +67,7 @@ class Config:
     EPOCHS = 50  # Количество эпох обучения
     VALIDATION_SPLIT = 0.2  # Доля данных для валидации
 
-    # Архитектура
+    # Использование внимания (Attention)
     USE_ATTENTION = True          # Механизм внимания
     USE_GRU = False               #  GRU вместо LSTM
     USE_PRETRAINED_EMBEDDINGS = False
@@ -76,28 +77,28 @@ class Config:
     RECURRENT_DROPOUT = 0.2
     L2_REGULARIZATION = 0.001
 
-    # Обучение
+    # Обучение: настройки lr
     INITIAL_LEARNING_RATE = 0.001
     USE_LEARNING_RATE_SCHEDULING = True
     REDUCE_LR_FACTOR = 0.5
     REDUCE_LR_PATIENCE = 3
     GRADIENT_CLIP_NORM = 1.0
 
-   # Данные и аугментация
+   # Аугментация данных и предобработка
     USE_DATA_AUGMENTATION = True
     USE_STOP_WORDS = True
     USE_LEMMATIZATION = True
     AUGMENTATION_PROBABILITY = 0.3
     
-    # Кэширование
+    # Кэширование предсказаний
     USE_CACHE = True
     CACHE_SIZE = 1000
     
-    # Визуализация
+    # Визуализация результатов
     SAVE_CONFUSION_MATRIX = True
     SAVE_ROC_CURVES = True 
 
-    # Экспорт
+    # Экспорт моделей
     EXPORT_TO_ONNX = False
    
 
@@ -120,7 +121,7 @@ INTENTS = [
     "other"                   # Прочие запросы
 ]
 
-# Определение стоп-слов 
+# Определение стоп-слов для русского языка
 RUSSIAN_STOP_WORDS = {
     'и', 'в', 'во', 'не', 'что', 'на', 'я', 'с', 'со', 'как', 'а', 'но', 'они',
     'у', 'же', 'ли', 'так', 'вот', 'за', 'по', 'из', 'о', 'об', 'при',
@@ -128,7 +129,7 @@ RUSSIAN_STOP_WORDS = {
     'были', 'была', 'был', 'бы', 'эта', 'эти', 'этот', 'тут', 'там', 'тогда'
 }
 
-# Словарь синонимов для аугментации 
+# Словарь синонимов для расширения данных (автоматическая аугментация)
 SYNONYMS = {
     'найди': ['найти', 'покажи', 'найди мне', 'подбери', 'посоветуй'],
     'корм': ['питание', 'еда', 'сухой корм', 'влажный корм', 'корма'],
@@ -146,7 +147,7 @@ SYNONYMS = {
     'бонусы': ['лояльность', 'карта лояльности', 'баллы', 'кэшбек']
 }
 
-# Кэш для предсказаний
+# Кэш для хранения предсказаний, чтобы ускорить работу и снизить нагрузку
 class PredictionCache:  
     def __init__(self, max_size: int = 1000):
         self.cache = {}
@@ -174,7 +175,7 @@ class PredictionCache:
 
 
 # Классификатор пользовательских намерений для запросов, связанных с зоомагазином
-# Используем в работе рекуррентную нейронную сеть (RNN) с слоями LSTM
+
 class PetStoreIntentClassifier:
 
     # Инициализация классификатора  
@@ -183,7 +184,7 @@ class PetStoreIntentClassifier:
             self.config = Config()    
         else:                         
             self.config = config
-
+        # Инициализация гиперпараметров
         self.vocab_size = config.VOCAB_SIZE
         self.max_sequence_length = config.MAX_SEQUENCE_LENGTH
         self.embedding_size = config.EMBEDDING_SIZE
@@ -192,20 +193,23 @@ class PetStoreIntentClassifier:
         self.validation_split = config.VALIDATION_SPLIT
 
         
-        # Инициализация компонентов предобработки текста и меток
+        # Инициализация токенизатора и энкодера меток
         self.tokenizer = Tokenizer(num_words=self.vocab_size, oov_token="<OOV>",
                                    filters='!"#$%&()*+,-./:;<=>?@[\\]^_`{|}~\t\n') # Добавлен filters
         self.label_encoder = LabelEncoder()
         self.model = None
         self.training_history = None # Пока нет истории
 
-        # Кэш
+        # Инициализация кэша предсказаний
         self.cache = PredictionCache(max_size=self.config.CACHE_SIZE) if self.config.USE_CACHE else None
+
+        # Обработка предобученных эмбеддингов
         self.embedding_matrix = None
         if self.config.USE_PRETRAINED_EMBEDDINGS and FASTTEXT_AVAILABLE:
             self._load_pretrained_embeddings()
     
     def _load_pretrained_embeddings(self):
+         # Загружаем предобученные эмбеддинги
         try:
             ft = fasttext.load_model(self.config.PRETRAINED_EMBEDDINGS_PATH)
             logger.info(f"Загружены предобученные эмбеддинги")
@@ -214,6 +218,7 @@ class PetStoreIntentClassifier:
             self.config.USE_PRETRAINED_EMBEDDINGS = False
     
     def _create_embedding_matrix(self, word_index: Dict) -> np.ndarray:
+         # Создаем матрицу эмбеддингов из предобученной модели
         if not self.config.USE_PRETRAINED_EMBEDDINGS or not FASTTEXT_AVAILABLE:
             return None
         
@@ -230,7 +235,7 @@ class PetStoreIntentClassifier:
         return embedding_matrix
         
     def _preprocess_text(self, text: str) -> str:  
-        # Приведение к нижнему регистру
+        # Предобработка текста: приведение к нижнему регистру, удаление лишних символов
         text = text.lower()
     
         # Удаление лишних пробелов
@@ -239,7 +244,7 @@ class PetStoreIntentClassifier:
         # Удаление эмодзи и спецсимволов
         text = re.sub(r'[^\w\s]', ' ', text)
     
-        # Удаление стоп-слов 
+        # Лемматизация 
         if self.config.USE_LEMMATIZATION and LEMMATIZATION_AVAILABLE:
             words = text.split()
             lemmatized_words = []
@@ -250,7 +255,7 @@ class PetStoreIntentClassifier:
                 except:
                     lemmatized_words.append(word)
             text = ' '.join(lemmatized_words)
-
+        # Удаление стоп-слов
         if self.config.USE_STOP_WORDS:
             words = text.split()
             words = [w for w in words if w not in RUSSIAN_STOP_WORDS]
@@ -258,25 +263,27 @@ class PetStoreIntentClassifier:
     
         return text
 
-    def _augment_text(self, text: str) -> List[str]:  
+    def _augment_text(self, text: str) -> List[str]:
+         # Аугментация текста: синонимы, перемешивание, удаление слов
         if not self.config.USE_DATA_AUGMENTATION:
             return [text]
     
         augmented = [text]
         words = text.split()
     
-        # Замена синонимов
+        # Замена слов с помощью синонимов
         for i, word in enumerate(words):
             if word in SYNONYMS and random.random() < self.config.AUGMENTATION_PROBABILITY:
                 new_word = random.choice(SYNONYMS[word])
                 new_text = ' '.join(words[:i] + [new_word] + words[i+1:])
                 augmented.append(new_text)
-
+        # Перемешивание слов (если длинный текст) 
         if len(words) >= 3 and random.random() < 0.3:
             shuffled = words.copy()
             random.shuffle(shuffled)
             augmented.append(' '.join(shuffled))
         
+        # Удаление случайных слов
         if len(words) >= 4 and random.random() < 0.2:
             remove_idx = random.randint(0, len(words)-1)
             shortened = words[:remove_idx] + words[remove_idx+1:]
@@ -285,11 +292,12 @@ class PetStoreIntentClassifier:
         return list(set(augmented))
     
 
-    # Подготовим данные для обучения: токенизация и кодирование меток   
+    # # Подготовка данных: токенизация, векторизация, кодирование меток   
     def prepare_data(self, texts: List[str], labels: List[str], augment: bool = True) -> Tuple[np.ndarray, np.ndarray]:
         processed_texts = []
         processed_labels = []
-        
+
+        # Обработка каждого текста
         for text, label in zip(texts, labels):
         # Предобработка
         clean_text = self._preprocess_text(text) 
@@ -302,27 +310,32 @@ class PetStoreIntentClassifier:
             for aug_text in augmented_texts[1:]:
                 processed_texts.append(aug_text)
                 processed_labels.append(label)
-                   
+
+        # Обучение токенизатора
         self.tokenizer.fit_on_texts(processed_texts)
 
+        # Преобразование текстов в последовательности чисел
         sequences = self.tokenizer.texts_to_sequences(processed_texts)
         X = pad_sequences(sequences, maxlen=self.max_sequence_length, padding='post', truncating='post')
         
         # Кодирование меток в числа
         y = self.label_encoder.fit_transform(processed_labels)
 
+        # Создание матрицы эмбеддингов, если используется предобученные
         if self.config.USE_PRETRAINED_EMBEDDINGS and FASTTEXT_AVAILABLE:
             self.embedding_matrix = self._create_embedding_matrix(self.tokenizer.word_index)
 
         logger.info(f"Подготовлено {len(processed_texts)} примеров")
         return X, y
     
-    # Создадим архитектуры нейросети
+    # Построение модели нейросети
     def build_model(self) -> tf.keras.Model:
+        # Создание входного слоя
         inputs = tf.keras.Input(shape=(self.max_sequence_length,)) 
 
+        # Создание слоя эмбеддингов
         if self.embedding_matrix is not None:
-            # Embedding слой
+            # Инициализация с предобученными эмбеддингами
             embedding = layers.Embedding(
                 self.vocab_size, self.embedding_size,
                 weights=[self.embedding_matrix],
@@ -330,15 +343,16 @@ class PetStoreIntentClassifier:
                 input_length=self.max_sequence_length
             )(inputs)
        else:
+            # Обучаемый слой эмбеддингов
             embedding = layers.Embedding(
                 self.vocab_size, self.embedding_size,
                 input_length=self.max_sequence_length,
                 mask_zero=True
             )(inputs)
-    
+        # Регуляризация
         embedding = layers.SpatialDropout1D(0.2)(embedding)
     
-        # Выбор типа RNN 
+        # Выбор типа GRU 
         if self.config.USE_GRU:
             lstm_out = layers.Bidirectional(
                 layers.GRU(64, return_sequences=True, dropout=self.config.DROPOUT_RATE,
@@ -349,17 +363,17 @@ class PetStoreIntentClassifier:
                 layers.LSTM(64, return_sequences=True, dropout=self.config.DROPOUT_RATE,
                        recurrent_dropout=self.config.RECURRENT_DROPOUT)
             )(embedding)
-    
+        # Dropout для регуляризации
         lstm_out = layers.Dropout(self.config.DROPOUT_RATE)(lstm_out)
     
-        # Механизм внимания 
+        # Включение внимания (если включено) 
         if self.config.USE_ATTENTION:
             lstm_out = layers.GlobalMaxPooling1D()(lstm_out)
             lstm_out = layers.Dense(64, activation='tanh')(lstm_out)
         else:
             lstm_out = layers.GlobalMaxPooling1D()(lstm_out)
 
-        # Batch Normalization 
+        # Нормализация 
         lstm_out = layers.BatchNormalization()(lstm_out)
            
         # Полносвязные слои с L2 регуляризацией
@@ -372,12 +386,12 @@ class PetStoreIntentClassifier:
                          kernel_regularizer=tf.keras.regularizers.l2(self.config.L2_REGULARIZATION))(dense1)
         dense2 = layers.BatchNormalization()(dense2)
         dense2 = layers.Dropout(self.config.DROPOUT_RATE * 0.5)(dense2)
-    
+        # Выходной слой
         outputs = layers.Dense(len(INTENTS), activation='softmax')(dense2)
-    
+        # Создаем модель
         model = tf.keras.Model(inputs=inputs, outputs=outputs)
 
-        # Оптимизатор с gradient clipping
+        # Компиляция модели с оптимизатором и метриками
         optimizer = tf.keras.optimizers.Adam(learning_rate=self.config.INITIAL_LEARNING_RATE,
                                         clipnorm=self.config.GRADIENT_CLIP_NORM)
         
@@ -404,7 +418,7 @@ class PetStoreIntentClassifier:
         )
         callbacks_list.append(early_stop)
 
-        # Learning rate scheduling 
+         # Настройка снижения lr
         if self.config.USE_LEARNING_RATE_SCHEDULING:
             reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(
                 monitor='val_loss' if X_val is not None else 'loss',
@@ -415,7 +429,7 @@ class PetStoreIntentClassifier:
             )
             callbacks_list.append(reduce_lr)
             
-        # Model checkpoint (Сохраняет лучшую модель)
+        # Сохраняет лучшую модель по метрике
         checkpoint = tf.keras.callbacks.ModelCheckpoint(
             'best_model.h5',
             monitor='val_accuracy' if X_val is not None else 'accuracy',
@@ -425,7 +439,7 @@ class PetStoreIntentClassifier:
         )
         callbacks_list.append(checkpoint)
 
-        # TensorBoard 
+        # TensorBoard для визуализации процесса обучения
         log_dir = f"logs/fit/{datetime.now().strftime('%Y%m%d-%H%M%S')}"
         tensorboard = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=0)
         callbacks_list.append(tensorboard)
@@ -443,7 +457,7 @@ class PetStoreIntentClassifier:
         )
         
         return self.training_history
-
+    # Кросс-валидация
     def train_with_cross_validation(self, X: np.ndarray, y: np.ndarray, 
                                    n_folds: int = 3) -> Dict[str, float]:
         skf = StratifiedKFold(n_splits=n_folds, shuffle=True, random_state=42)
@@ -451,53 +465,56 @@ class PetStoreIntentClassifier:
         
         for fold, (train_idx, val_idx) in enumerate(skf.split(X, y)):
             logger.info(f"Fold {fold + 1}/{n_folds}")
-            
+            # Разделение данных на тренировочные и валидационные
             X_train_fold, X_val_fold = X[train_idx], X[val_idx]
             y_train_fold, y_val_fold = y[train_idx], y[val_idx]
-            
+            # Обнуляем модель для каждого фолда
             self.model = None
             self.build_model()
-            
+            # Обучение на текущем фолде
             self.train(X_train_fold, y_train_fold, X_val_fold, y_val_fold)
-            
+            # Оценка на валидационном наборе
             results = self.model.evaluate(X_val_fold, y_val_fold, verbose=0)
             cv_scores.append(results[1])
-        
+        # Итоговая статистика кросс-валидации
         return {
             'mean_accuracy': np.mean(cv_scores),
             'std_accuracy': np.std(cv_scores),
             'fold_scores': cv_scores
         }
-    
+    # Предсказание по одному тексту
     def predict(self, text: str, use_cache: bool = True) -> Tuple[str, float]:
         clean_text = self._preprocess_text(text)
-        
+        # Проверка кэша
         if use_cache and self.cache is not None:
             cached = self.cache.get(clean_text)
             if cached is not None:
                 return cached
-        
+        # Токенизация
         sequence = self.tokenizer.texts_to_sequences([clean_text])
         X_input = pad_sequences(sequence, maxlen=self.max_sequence_length,
                                padding='post', truncating='post')
-        
+        # Предсказание
         predictions = self.model.predict(X_input, verbose=0)[0]
         pred_class = np.argmax(predictions)
         confidence = predictions[pred_class]
-        
+        # Обратное преобразование метки
         intent = self.label_encoder.inverse_transform([pred_class])[0]
-        
+        # Сохранение в кэш
         if use_cache and self.cache is not None:
             self.cache.set(clean_text, (intent, float(confidence)))
         
         return intent, float(confidence)
-    
+   
+    # Предсказание батчем
     def predict_batch(self, texts: List[str]) -> List[Tuple[str, float]]:
+        # Предобработка всех текстов
         clean_texts = [self._preprocess_text(t) for t in texts]
+        # Токенизация и паддинг
         sequences = self.tokenizer.texts_to_sequences(clean_texts)
         X_input = pad_sequences(sequences, maxlen=self.max_sequence_length,
                                padding='post', truncating='post')
-        
+        # Предсказания для каждого текста
         all_predictions = self.model.predict(X_input, verbose=0)
         results = []
         
@@ -508,16 +525,16 @@ class PetStoreIntentClassifier:
             results.append((intent, float(confidence)))
         
         return results
-    
+    # Предсказание с порогом доверия
     def predict_with_confidence_threshold(self, text: str, threshold: float = 0.6) -> Tuple[str, float, bool]:
         intent, confidence = self.predict(text)
         is_confident = confidence >= threshold
         return intent, confidence, is_confident
-    
+    # Расчет подробных метрик (precision, recall, F1)
     def calculate_detailed_metrics(self, X_test: np.ndarray, y_test: np.ndarray) -> Dict[str, Any]:
         y_pred_proba = self.model.predict(X_test, verbose=0)
         y_pred = np.argmax(y_pred_proba, axis=1)
-        
+        # Расчет метрик
         metrics = {
             'precision_weighted': precision_score(y_test, y_pred, average='weighted', zero_division=0),
             'recall_weighted': recall_score(y_test, y_pred, average='weighted', zero_division=0),
@@ -531,15 +548,15 @@ class PetStoreIntentClassifier:
         }
         
         return metrics
-    
+    # Общая оценка модели
     def evaluate_model(self, X_test: np.ndarray, y_test: np.ndarray) -> Dict[str, Any]:
         # Получаем базовые метрики 
         eval_results = self.model.evaluate(X_test, y_test, verbose=0)
         loss = eval_results[0]
         accuracy = eval_results[1]
-        
+        # Детальные метрики
         detailed_metrics = self.calculate_detailed_metrics(X_test, y_test)
-        
+        # Предсказания для ROC-AUC
         y_pred_proba = self.model.predict(X_test, verbose=0)
         y_pred = np.argmax(y_pred_proba, axis=1)
         
@@ -547,15 +564,16 @@ class PetStoreIntentClassifier:
         from sklearn.utils.multiclass import unique_labels
         present_labels = unique_labels(y_test, y_pred)
         present_names = [self.label_encoder.inverse_transform([l])[0] for l in present_labels]
-    
+        
+        # Создание отчета
         report = classification_report(y_test, y_pred, 
                                  labels=present_labels,
                                  target_names=present_names,
                                  output_dict=True,
                                  zero_division=0)
-        
+        # Матрица ошибок
         cm = confusion_matrix(y_test, y_pred)
-        
+        # ROC-AUC по каждому классу
         y_test_one_hot = tf.keras.utils.to_categorical(y_test, num_classes=len(INTENTS))
         roc_auc_scores = {}
         
@@ -578,7 +596,7 @@ class PetStoreIntentClassifier:
             'confusion_matrix': cm,
             'roc_auc_scores': roc_auc_scores
         }
-        
+        # Визуализация
         if self.config.SAVE_CONFUSION_MATRIX and VIZ_AVAILABLE:
             self._plot_confusion_matrix(cm)
         
@@ -587,6 +605,7 @@ class PetStoreIntentClassifier:
         
         return results
     
+    # Визуализация матрицы ошибок
     def _plot_confusion_matrix(self, cm: np.ndarray):
         try:
             plt.figure(figsize=(14, 12))
@@ -605,6 +624,7 @@ class PetStoreIntentClassifier:
         except Exception as e:
             logger.warning(f"Не удалось сохранить матрицу ошибок: {e}")
     
+    # Визуализация ROC-кривых
     def _plot_roc_curves(self, y_true_one_hot: np.ndarray, y_pred_proba: np.ndarray):
         try:
             plt.figure(figsize=(12, 8))
@@ -646,11 +666,12 @@ class PetStoreIntentClassifier:
             with open(os.path.join(path, 'label_encoder.pkl'), 'wb') as f:
                 pickle.dump(self.label_encoder, f)
 
+            # Сохраняем статистику кэша
             if self.cache is not None:
                 with open(os.path.join(path, 'cache_stats.pkl'), 'wb') as f:
                     pickle.dump(self.cache.get_stats(), f)
 
-            # Сохраняем конфигурацию в json
+            # Сохраняем конфигурацию
             config_data = {
                 'vocab_size': self.vocab_size,
                 'max_sequence_length': self.max_sequence_length,
@@ -663,7 +684,7 @@ class PetStoreIntentClassifier:
 
             with open(os.path.join(path, 'config.json'), 'w', encoding='utf-8') as f:
                 json.dump(config_data, f, ensure_ascii=False, indent=2)
-
+            # Экспорт в ONNX, если включено
             if self.config.EXPORT_TO_ONNX and ONNX_AVAILABLE:
                 self.export_to_onnx(os.path.join(path, 'model.onnx'))
 
@@ -672,7 +693,7 @@ class PetStoreIntentClassifier:
       except Exception as e:
           logging.error(f"Ошибка при сохранении модели: {e}")
           raise
-
+    # Экспорт модели в формат ONNX
     def export_to_onnx(self, path: str = 'model.onnx'):
         if not ONNX_AVAILABLE:
             logger.warning("ONNX недоступен")
@@ -713,11 +734,12 @@ class PetStoreIntentClassifier:
         
         return instance
 
+    # Получение статистики кэша
     def get_cache_stats(self) -> Dict:
         if self.cache is not None:
             return self.cache.get_stats()
         return {'caching_disabled': True}
-    
+    # Визуализация истории обучения
     def plot_training_history(self):
         if self.training_history is None:
             logger.warning("Модель ещё не обучена")
@@ -728,6 +750,7 @@ class PetStoreIntentClassifier:
             return
         
         try:
+            # Построение графиков потерь и точности
             fig, axes = plt.subplots(1, 2, figsize=(14, 5))
             
             axes[0].plot(self.training_history.history['loss'], label='Train Loss')
@@ -838,13 +861,13 @@ class PetStoreIntentClassifier:
 
     logger.info(f"Создан датасет: {len(texts)} примеров, {len(set(labels))} классов")
     return texts, labels
-
+# Обертка для API (для интеграции с внешним сервисом)
 class RESTAPIWrapper:
     def __init__(self, model_path: str):
         self.model = PetStoreIntentClassifier.load_from_file(model_path)
         self.start_time = datetime.now()
         self.request_count = 0
-    
+    # Предсказание через API с порогом доверия
     def predict_api(self, text: str, threshold: float = 0.6) -> Dict:
         self.request_count += 1
         intent, confidence, is_confident = self.model.predict_with_confidence_threshold(text, threshold)
@@ -862,13 +885,13 @@ class RESTAPIWrapper:
                 'uptime_seconds': (datetime.now() - self.start_time).seconds
             }
         }
-    
+    # Многократное предсказание
     def batch_predict_api(self, texts: List[str]) -> List[Dict]:
         results = []
         for text in texts:
             results.append(self.predict_api(text))
         return results
-    
+    # Проверка состояния сервиса
     def health_check(self) -> Dict:
         return {
             'status': 'healthy',
@@ -902,13 +925,13 @@ if __name__ == "__main__":
 
     classifier = PetStoreIntentClassifier(config)
     
-    # Подготовка данных
+    # Подготовка данных (предобработка и аугментация)
     logger.info("3. Подготовка данных(предобработка + аугментация)...")
     X, y = classifier.prepare_data(texts, labels, augment=True)
     logger.info(f"   - Размер матрицы признаков: {X.shape}")
     logger.info(f"   - Уникальных токенов: {len(classifier.tokenizer.word_index)}")
     
-    # Разделение на train/test
+    # Разделение на обучающую и тестовую выборки
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.2, random_state=42, stratify=y  
     )
@@ -920,7 +943,7 @@ if __name__ == "__main__":
     classifier.build_model()
     classifier.model.summary()
     
-    # Кросс-валидация
+    # Кросс-валидация (если данных достаточно)
     if len(X_train) > 50:
         logger.info("5. Выполнение кросс-валидации...")
         try:
@@ -937,7 +960,7 @@ if __name__ == "__main__":
         logger.error(f"Ошибка при обучении: {e}")
         history = classifier.train(X_train, y_train)
     
-    # Оценка
+    # Оценка модели
     logger.info("7. Оценка модели на тестовых данных...")
     try:
         evaluation = classifier.evaluate_model(X_test, y_test)
@@ -977,13 +1000,13 @@ if __name__ == "__main__":
         except Exception as e:
             logger.error(f"Ошибка при предсказании '{query}': {e}")
     
-    # Статистика кэша
+    # Статистика кэша предсказаний
     cache_stats = classifier.get_cache_stats()
     if 'hit_rate' in cache_stats and cache_stats.get('hits', 0) > 0:
         logger.info(f"9. Статистика кэша: {cache_stats['hit_rate']*100:.1f}% попаданий")
         logger.info(f"   - Попаданий: {cache_stats['hits']}, Промахов: {cache_stats['misses']}")
     
-    # Визуализация
+    # Визуализация результатов обучения
     logger.info("10. Визуализация результатов...")
     classifier.plot_training_history()
     
@@ -1000,7 +1023,7 @@ if __name__ == "__main__":
     logger.info("Обучение завершено!")
     logger.info("=" * 60)
     
-    # Итоговая статистика
+    # Итоговая статистика по улучшениям
     print("\n" + "=" * 60)
     print("ИТОГОВЫЙ ОТЧЁТ ПО УЛУЧШЕНИЯМ:")
     print("=" * 60)
