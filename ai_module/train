@@ -301,28 +301,23 @@ class PetStoreIntentClassifier:
             verbose=1
         )
         callbacks_list.append(early_stop)
-        # Обучение с использованием тестового набора или validation split
-        if X_test is not None and y_test is not None:
-            # Обучение с отдельным тестовым набором
-            history = self.model.fit(
-            X, y,
-            epochs=self.epochs,
-            batch_size=self.batch_size,
-            validation_data=(X_test, y_test),
-            callbacks=[early_stop],
-            verbose=1
-         )
-        else:
-            # Обучение с использованием validation_split
-            history = self.model.fit(
-                X, y,
-                epochs=self.epochs,
-                batch_size=self.batch_size,
-                validation_split=self.validation_split,
-                callbacks=[early_stop],
+
+        # Learning rate scheduling 
+        if self.config.USE_LEARNING_RATE_SCHEDULING:
+            reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(
+                monitor='val_loss' if X_val is not None else 'loss',
+                factor=self.config.REDUCE_LR_FACTOR,
+                patience=self.config.REDUCE_LR_PATIENCE,
+                min_lr=1e-6,
                 verbose=1
-             )
-        return history
+            )
+            callbacks_list.append(reduce_lr)
+            
+        # Model checkpoint
+        
+        
+
+            return history
 
     # Сохранение модели и компонентов
     def save_model(self, path: str):
