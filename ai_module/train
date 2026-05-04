@@ -78,6 +78,9 @@ INTENTS = [
     "ask_delivery",           # Вопросы о доставке
     "ask_payment",            # Вопросы об оплате
     "ask_promotions",         # Вопросы об акциях
+    "return_product",         # возврат товара
+    "loyalty_program",        # программа лояльности
+    "veterinary_advice",      # советы ветеринара
     "greeting",               # Приветствие
     "goodbye",                # Прощание
     "help",                   # Помощь
