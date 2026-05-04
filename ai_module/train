@@ -160,6 +160,24 @@ class PetStoreIntentClassifier:
         # Кэш
     self.cache = PredictionCache(max_size=self.config.CACHE_SIZE) if self.config.USE_CACHE else None
 
+    def _preprocess_text(self, text: str) -> str:  
+        # Приведение к нижнему регистру
+        text = text.lower()
+    
+        # Удаление лишних пробелов
+        text = re.sub(r'\s+', ' ', text).strip()
+    
+        # Удаление эмодзи и спецсимволов
+        text = re.sub(r'[^\w\s]', ' ', text)
+    
+        # Удаление стоп-слов 
+        if self.config.USE_STOP_WORDS:
+            words = text.split()
+            words = [w for w in words if w not in RUSSIAN_STOP_WORDS]
+            text = ' '.join(words)
+    
+        return text
+
     # Подготовим данные для обучения: токенизация и кодирование меток   
     def prepare_data(self, texts: List[str], labels: List[str]) -> Tuple[np.ndarray, np.ndarray]:
         
