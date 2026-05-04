@@ -151,7 +151,8 @@ class PetStoreIntentClassifier:
 
         
         # Инициализация компонентов предобработки текста и меток
-        self.tokenizer = Tokenizer(num_words=self.vocab_size, oov_token="<OOV>")
+        self.tokenizer = Tokenizer(num_words=self.vocab_size, oov_token="<OOV>",
+                                   filters='!"#$%&()*+,-./:;<=>?@[\\]^_`{|}~\t\n') # Добавлен filters
         self.label_encoder = LabelEncoder()
         self.model = None
 
