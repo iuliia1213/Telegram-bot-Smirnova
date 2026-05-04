@@ -295,10 +295,12 @@ class PetStoreIntentClassifier:
 
         # Настройка callback для ранней остановки обучения
         early_stop = tf.keras.callbacks.EarlyStopping(
-            monitor='val_loss',
+            monitor='val_loss' if X_val is not None else 'loss',
             patience=5,
             restore_best_weights=True
+            verbose=1
         )
+        callbacks_list.append(early_stop)
         # Обучение с использованием тестового набора или validation split
         if X_test is not None and y_test is not None:
             # Обучение с отдельным тестовым набором
