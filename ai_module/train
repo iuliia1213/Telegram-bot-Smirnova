@@ -14,6 +14,13 @@ from tensorflow.keras.preprocessing.sequence import pad_sequences
 from sklearn.preprocessing import LabelEncoder
 from typing import List, Tuple, Dict
 from sklearn.model_selection import train_test_split
+from collections import defaultdict
+from functools import lru_cache
+from datetime import datetime
+from tensorflow.keras import callbacks  
+from sklearn.metrics import (classification_report, confusion_matrix, 
+                             roc_curve, auc, precision_score, recall_score, f1_score)
+from sklearn.model_selection import StratifiedKFold
 
 
 # Настройка логирования для отслеживания процессов
