@@ -518,27 +518,60 @@ class PetStoreIntentClassifier:
 
 # Основной блок запуска
 if __name__ == "__main__":
-    # Создадим и обучим model 
-    import sys
-
-    logging.info("Создание набора данных...")
+    logger.info("=" * 60)
+    logger.info("Запуск модели классификатора намерений")
+    logger.info("=" * 60)
+    
+    # Создание датасета
+    logger.info("1. Создание набора данных...")
     texts, labels = create_dataset()
-
-    logging.info("Инициализация классификатора...")
-    classifier = PetStoreIntentClassifier()
-
-    logging.info("Подготовка данных...")
-    X, y = classifier.prepare_data(texts, labels)
-
-    # Делим на обучающую и тестовую выборки
+    logger.info(f"   - Всего примеров: {len(texts)}")
+    logger.info(f"   - Классов: {len(set(labels))}")
+    
+    # Инициализация классификатора с конфигурацией
+    logger.info("2. Инициализация классификатора...")
+    config = Config()
+    config.USE_DATA_AUGMENTATION = True
+    config.USE_STOP_WORDS = True
+    config.USE_CACHE = True
+    
+    classifier = PetStoreIntentClassifier(config)
+    
+    # Подготовка данных
+    logger.info("3. Подготовка данных...")
+    X, y = classifier.prepare_data(texts, labels, augment=True)
+    logger.info(f"   - Размер матрицы признаков: {X.shape}")
+    
+    # Разделение с стратификацией 
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42
+        X, y, test_size=0.2, random_state=42, stratify=y  
     )
-
-    logging.info("Обучение модели...")
+    logger.info(f"   - Train: {len(X_train)} примеров")
+    logger.info(f"   - Test: {len(X_test)} примеров")
+    
+    # Обучение
+    logger.info("4. Обучение модели...")
+    classifier.build_model()
+    classifier.model.summary()
     classifier.train(X_train, y_train, X_test, y_test)
-
-    # Сохраняем model
-    save_path = 'ai_model/pet_store_model'
+    
+    # Оценка
+    logger.info("5. Оценка модели...")
+    loss, accuracy = classifier.evaluate(X_test, y_test)
+    logger.info(f"   - Точность на тесте: {accuracy:.4f}")
+    
+    # Тест предсказаний
+    logger.info("6. Тестирование предсказаний...")
+    test_queries = ["Найди корм для кошек", "Сколько стоит ошейник"]
+    for query in test_queries:
+        intent, confidence = classifier.predict(query)
+        logger.info(f"   - '{query}' → {intent} (conf: {confidence:.3f})")
+    
+    # Сохранение
+    logger.info("7. Сохранение модели...")
+    save_path = 'ai_model/pet_store_model_v3'
     classifier.save_model(save_path)
-    logging.info(f"Обучение завершено! model сохранена в {save_path}")
+    
+    logger.info("=" * 60)
+    logger.info("Обучение завершено!")
+    logger.info("=" * 60)
