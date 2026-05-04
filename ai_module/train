@@ -146,7 +146,7 @@ SYNONYMS = {
     'бонусы': ['лояльность', 'карта лояльности', 'баллы', 'кэшбек']
 }
 
-# Добавление кэша предсказаний
+# Кэш для предсказаний
 class PredictionCache:  
     def __init__(self, max_size: int = 1000):
         self.cache = {}
@@ -154,20 +154,20 @@ class PredictionCache:
         self.hits = 0
         self.misses = 0
     
-    def get(self, key: str):
+    def get(self, key: str) -> Optional[Tuple[str, float]]:
         if key in self.cache:
             self.hits += 1
             return self.cache[key]
         self.misses += 1
         return None
     
-    def set(self, key: str, value):
+    def set(self, key: str, value: Tuple[str, float]):
         if len(self.cache) >= self.max_size:
             oldest_key = next(iter(self.cache))
             del self.cache[oldest_key]
         self.cache[key] = value
     
-    def get_stats(self):
+    def get_stats(self) -> Dict:
         total = self.hits + self.misses
         hit_rate = self.hits / total if total > 0 else 0
         return {'hits': self.hits, 'misses': self.misses, 'hit_rate': hit_rate}
