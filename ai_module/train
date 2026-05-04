@@ -136,7 +136,12 @@ class PredictionCache:
 class PetStoreIntentClassifier:
 
     # Инициализация классификатора  
-    def __init__(self, config=Config):
+    def __init__(self, config=None):
+        if config is None:            
+            self.config = Config()    
+        else:                         
+            self.config = config
+
         self.vocab_size = config.VOCAB_SIZE
         self.max_sequence_length = config.MAX_SEQUENCE_LENGTH
         self.embedding_size = config.EMBEDDING_SIZE
