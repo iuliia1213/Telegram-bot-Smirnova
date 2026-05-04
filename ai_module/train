@@ -83,7 +83,7 @@ class Config:
     REDUCE_LR_PATIENCE = 3
     GRADIENT_CLIP_NORM = 1.0
 
-   # Данные
+   # Данные и аугментация
     USE_DATA_AUGMENTATION = True
     USE_STOP_WORDS = True
     USE_LEMMATIZATION = True
@@ -96,6 +96,9 @@ class Config:
     # Визуализация
     SAVE_CONFUSION_MATRIX = True
     SAVE_ROC_CURVES = True 
+
+    # Экспорт
+    EXPORT_TO_ONNX = False
    
 
 # Определение намерений пользователя для классификации
