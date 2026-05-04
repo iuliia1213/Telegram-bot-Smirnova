@@ -3,15 +3,18 @@
 import json
 import numpy as np
 import tensorflow as tf
+import pickle
+import os
+import logging
+import random
+import re
 from tensorflow.keras import layers, models
 from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from sklearn.preprocessing import LabelEncoder
 from typing import List, Tuple, Dict
 from sklearn.model_selection import train_test_split
-import pickle
-import os
-import logging
+
 
 # Настройка логирования для отслеживания процессов
 logging.basicConfig(level=logging.INFO)
