@@ -322,9 +322,25 @@ class PetStoreIntentClassifier:
             verbose=1
         )
         callbacks_list.append(checkpoint)
-        
 
-            return history
+        # TensorBoard 
+        log_dir = f"logs/fit/{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+        tensorboard = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=0)
+        callbacks_list.append(tensorboard)
+    
+        validation_data = (X_val, y_val) if X_val is not None else None
+    
+        self.training_history = self.model.fit(
+            X, y,
+            epochs=self.epochs,
+            batch_size=self.batch_size,
+            validation_data=validation_data,
+            validation_split=self.validation_split if X_val is None else 0,
+            callbacks=callbacks_list,
+            verbose=1
+        )
+        
+        return self.training_history
 
     # Сохранение модели и компонентов
     def save_model(self, path: str):
