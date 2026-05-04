@@ -225,32 +225,59 @@ class PetStoreIntentClassifier:
     
     # Создадим архитектуры нейросети
     def build_model(self) -> tf.keras.Model:
-
-        model = models.Sequential([ 
-            # Создаем последовательную модель
-            # Встроенный слой для превращения слов в плотные векторные представления
-            layers.Embedding(self.vocab_size, self.embedding_size, input_length=self.max_sequence_length),
-            # Двунаправленный слой LSTM для обработки последовательностей
-            layers.Bidirectional(layers.LSTM(64, return_sequences=True)),
-            # Регуляризация Dropout
-            layers.Dropout(0.3),
-            # Еще один слой LSTM
-            layers.Bidirectional(layers.LSTM(32)),
-            # Еще Dropout
-            layers.Dropout(0.3),
-            # Полносвязный слой перед выходом
-            layers.Dense(64, activation='relu'),
-            layers.Dropout(0.2),
-            # Выходной слой с количеством нейронов равным числу классов
-            layers.Dense(len(INTENTS), activation='softmax')
-        ])
-        # Компиляция модели с оптимизатором и функцией потерь
-        model.compile(
-            optimizer='adam',
-            loss='sparse_categorical_crossentropy',
-            metrics=['accuracy']
-        )
+        inputs = tf.keras.Input(shape=(self.max_sequence_length,))  # ← ИЗМЕНИТЬ на Functional API
+    
+        # Embedding слой
+        embedding = layers.Embedding(
+            self.vocab_size, self.embedding_size,
+            input_length=self.max_sequence_length
+        )(inputs)
+    
+        # Spatial Dropout
+        embedding = layers.SpatialDropout1D(0.2)(embedding)
+    
+        # Выбор типа RNN (НОВОЕ)
+        if self.config.USE_GRU:
+            lstm_out = layers.Bidirectional(
+                layers.GRU(64, return_sequences=True, dropout=self.config.DROPOUT_RATE,
+                      recurrent_dropout=self.config.RECURRENT_DROPOUT)
+            )(embedding)
+        else:
+            lstm_out = layers.Bidirectional(
+                layers.LSTM(64, return_sequences=True, dropout=self.config.DROPOUT_RATE,
+                       recurrent_dropout=self.config.RECURRENT_DROPOUT)
+            )(embedding)
+    
+        lstm_out = layers.Dropout(self.config.DROPOUT_RATE)(lstm_out)
+    
+        # Механизм внимания 
+        if self.config.USE_ATTENTION:
+            lstm_out = layers.GlobalMaxPooling1D()(lstm_out)
+            lstm_out = layers.Dense(64, activation='tanh')(lstm_out)
+        else:
+            lstm_out = layers.GlobalMaxPooling1D()(lstm_out)
+    
+           
+        # Полносвязные слои с L2 регуляризацией
+        dense1 = layers.Dense(128, activation='relu',
+                         kernel_regularizer=tf.keras.regularizers.l2(self.config.L2_REGULARIZATION))(lstm_out)
+        dense1 = layers.BatchNormalization()(dense1)
+        dense1 = layers.Dropout(self.config.DROPOUT_RATE)(dense1)
+    
+        dense2 = layers.Dense(64, activation='relu',
+                         kernel_regularizer=tf.keras.regularizers.l2(self.config.L2_REGULARIZATION))(dense1)
+        dense2 = layers.BatchNormalization()(dense2)
+        dense2 = layers.Dropout(self.config.DROPOUT_RATE * 0.5)(dense2)
+    
+        outputs = layers.Dense(len(INTENTS), activation='softmax')(dense2)
+    
+        model = tf.keras.Model(inputs=inputs, outputs=outputs)
+    
+        
+        model.compile(optimizer=optimizer, loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+    
         self.model = model
+        logger.info("Модель успешно построена")
         return model
     
     # Обучим модель
