@@ -21,7 +21,10 @@ from tensorflow.keras import callbacks
 from sklearn.metrics import (classification_report, confusion_matrix, 
                              roc_curve, auc, precision_score, recall_score, f1_score)
 from sklearn.model_selection import StratifiedKFold
-
+SEED = 42
+random.seed(SEED)
+np.random.seed(SEED)
+tf.random.set_seed(SEED)
 
 # Настройка логирования для отслеживания процессов
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -64,7 +67,7 @@ class Config:
     MAX_SEQUENCE_LENGTH = 100  # Максимальная длина входной последовательности
     EMBEDDING_SIZE = 128  # Размерность векторных представлений слов
     BATCH_SIZE = 32  # Размер батча для обучения
-    EPOCHS = 50  # Количество эпох обучения
+    EPOCHS = 30  # Количество эпох обучения
     VALIDATION_SPLIT = 0.2  # Доля данных для валидации
 
     # Использование внимания (Attention)
@@ -73,12 +76,12 @@ class Config:
     USE_PRETRAINED_EMBEDDINGS = False
 
     # Регуляризация
-    DROPOUT_RATE = 0.3
+    DROPOUT_RATE = 0.5
     RECURRENT_DROPOUT = 0.2
     L2_REGULARIZATION = 0.001
 
     # Обучение: настройки lr
-    INITIAL_LEARNING_RATE = 0.001
+    INITIAL_LEARNING_RATE = 0.005
     USE_LEARNING_RATE_SCHEDULING = True
     REDUCE_LR_FACTOR = 0.5
     REDUCE_LR_PATIENCE = 3
@@ -933,7 +936,7 @@ if __name__ == "__main__":
     
     # Разделение на обучающую и тестовую выборки
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42, stratify=y  
+        X, y, test_size=0.2, random_state=99, stratify=y  
     )
     logger.info(f"   - Train: {len(X_train)} примеров")
     logger.info(f"   - Test: {len(X_test)} примеров")
