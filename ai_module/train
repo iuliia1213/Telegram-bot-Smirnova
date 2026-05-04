@@ -286,10 +286,12 @@ class PetStoreIntentClassifier:
         return model
     
     # Обучим модель
-    def train(self, X: np.ndarray, y: np.ndarray, X_test: np.ndarray = None, y_test: np.ndarray = None):
+    def train(self, X: np.ndarray, y: np.ndarray, X_val: np.ndarray = None, y_val: np.ndarray = None) -> tf.keras.callbacks.History:
         # Если модель еще не создана, создаем
         if self.model is None:
             self.build_model()
+
+        callbacks_list = []
 
         # Настройка callback для ранней остановки обучения
         early_stop = tf.keras.callbacks.EarlyStopping(
