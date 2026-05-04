@@ -710,49 +710,54 @@ class PetStoreIntentClassifier:
 
         # Загружаем модель
         instance.model = tf.keras.models.load_model(os.path.join(path, 'model.h5'))
+        
         return instance
 
-    # Метод для оценки модели
-    def evaluate(self, X_test: np.ndarray, y_test: np.ndarray):
-        return self.model.evaluate(X_test, y_test)
-
-    # Предскажем намерения по новому тексту
-    def predict(self, text: str) -> Tuple[str, float]:
-        # Преобразуем текст в последовательность
-        sequence = self.tokenizer.texts_to_sequences([text])
-        # Обрезка или дополнение
-        X_input = pad_sequences(sequence, maxlen=self.max_sequence_length,
-                              padding='post', truncating='post')
-        # Предсказание
-        predictions  = self.model.predict(X_input, verbose=0)[0]
-        # Определение класса с наибольшей вероятностью
-        pred_class = np.argmax(predictions)
-        confidence  = predictions[pred_class]
-        # Обратное преобразование метки
-        intent  = self.label_encoder.inverse_transform([pred_class])[0]
-        return intent, float(confidence)
-
-   def predict_batch(self, texts: List[str]) -> List[Tuple[str, float]]:  
-        clean_texts = [self._preprocess_text(t) for t in texts]
-        sequences = self.tokenizer.texts_to_sequences(clean_texts)
-        X_input = pad_sequences(sequences, maxlen=self.max_sequence_length,
-                           padding='post', truncating='post')
+    def get_cache_stats(self) -> Dict:
+        if self.cache is not None:
+            return self.cache.get_stats()
+        return {'caching_disabled': True}
     
-        all_predictions = self.model.predict(X_input, verbose=0)
-        results = []
-    
-        for predictions in all_predictions:
-            pred_class = np.argmax(predictions)
-            confidence = predictions[pred_class]
-            intent = self.label_encoder.inverse_transform([pred_class])[0]
-            results.append((intent, float(confidence)))
-    
-        return results
+    def plot_training_history(self):
+        if self.training_history is None:
+            logger.warning("Модель ещё не обучена")
+            return
+        
+        if not VIZ_AVAILABLE:
+            logger.warning("Библиотеки визуализации не установлены")
+            return
+        
+        try:
+            fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+            
+            axes[0].plot(self.training_history.history['loss'], label='Train Loss')
+            if 'val_loss' in self.training_history.history:
+                axes[0].plot(self.training_history.history['val_loss'], label='Val Loss')
+            axes[0].set_title('Loss Function')
+            axes[0].set_xlabel('Epochs')
+            axes[0].set_ylabel('Loss')
+            axes[0].legend()
+            axes[0].grid(True, alpha=0.3)
+            
+            axes[1].plot(self.training_history.history['accuracy'], label='Train Accuracy')
+            if 'val_accuracy' in self.training_history.history:
+                axes[1].plot(self.training_history.history['val_accuracy'], label='Val Accuracy')
+            axes[1].set_title('Accuracy')
+            axes[1].set_xlabel('Epochs')
+            axes[1].set_ylabel('Accuracy')
+            axes[1].legend()
+            axes[1].grid(True, alpha=0.3)
+            
+            plt.tight_layout()
+            plt.savefig('training_history.png', dpi=300)
+            plt.close()
+            logger.info("Сохранена история обучения: training_history.png")
+        except Exception as e:
+            logger.warning(f"Не удалось сохранить график обучения: {e}")
             
     
     # Создадим тренировочный набор данных для обучения
     def create_dataset() -> Tuple[List[str], List[str]]:
-    
     texts = []
     labels = []
 
@@ -763,6 +768,11 @@ class PetStoreIntentClassifier:
         ("Ищу игрушки для собак", "find_product"),
         ("Где найти ошейник для собаки", "find_product"),
         ("Покажи корма для котят", "find_product"),
+        ("Нужны миски для кошек", "find_product"),
+        ("Подбери поводок для собаки", "find_product"),
+        ("Лежанка для кота", "find_product"),
+        ("Когтеточка для кошки", "find_product"),
+        ("Зоотовары для грызунов", "find_product"),
         ("Расскажи о корме Роял Канин", "get_product_info"),
         ("Что входит в состав корма", "get_product_info"),
         ("Характеристики игрушки", "get_product_info"),
@@ -798,26 +808,27 @@ class PetStoreIntentClassifier:
         ("Промокоды на скидку", "ask_promotions"),
         ("Акционные товары", "ask_promotions"),
         ("Специальные предложения", "ask_promotions"),
+        ("Как вернуть товар", "return_product"),
+        ("Хочу обменять товар", "return_product"),
+        ("Гарантия на корм", "return_product"),
+        ("Как получить бонусы", "loyalty_program"),
+        ("Карта лояльности", "loyalty_program"),
+        ("Накопительные скидки", "loyalty_program"),
+        ("У котенка понос", "veterinary_advice"),
+        ("Собака кашляет", "veterinary_advice"),
+        ("Нужен ветеринар", "veterinary_advice"),
         ("Привет", "greeting"),
         ("Здравствуйте", "greeting"),
         ("Добрый день", "greeting"),
-        ("Хай", "greeting"),
-        ("Начнем", "greeting"),
         ("Пока", "goodbye"),
         ("До свидания", "goodbye"),
-        ("Спасибо, до встречи", "goodbye"),
         ("Всего доброго", "goodbye"),
-        ("Завершить", "goodbye"),
         ("Помогите", "help"),
         ("Что ты умеешь", "help"),
         ("Какие команды есть", "help"),
-        ("Как пользоваться", "help"),
-        ("Нужна помощь", "help"),
         ("Не знаю что спросить", "other"),
         ("Просто тест", "other"),
         ("Как дела", "other"),
-        ("Что нового", "other"),
-        ("Расскажи что-нибудь", "other"),
     ]
 
     # Заполняем списки
@@ -825,7 +836,47 @@ class PetStoreIntentClassifier:
         texts.append(text)
         labels.append(label)
 
+    logger.info(f"Создан датасет: {len(texts)} примеров, {len(set(labels))} классов")
     return texts, labels
+
+class RESTAPIWrapper:
+    def __init__(self, model_path: str):
+        self.model = PetStoreIntentClassifier.load_from_file(model_path)
+        self.start_time = datetime.now()
+        self.request_count = 0
+    
+    def predict_api(self, text: str, threshold: float = 0.6) -> Dict:
+        self.request_count += 1
+        intent, confidence, is_confident = self.model.predict_with_confidence_threshold(text, threshold)
+        
+        return {
+            'text': text,
+            'intent': intent,
+            'confidence': confidence,
+            'is_confident': is_confident,
+            'threshold_used': threshold,
+            'available_intents': INTENTS,
+            'stats': {
+                'total_requests': self.request_count,
+                'cache_hit_rate': self.model.get_cache_stats().get('hit_rate', 0),
+                'uptime_seconds': (datetime.now() - self.start_time).seconds
+            }
+        }
+    
+    def batch_predict_api(self, texts: List[str]) -> List[Dict]:
+        results = []
+        for text in texts:
+            results.append(self.predict_api(text))
+        return results
+    
+    def health_check(self) -> Dict:
+        return {
+            'status': 'healthy',
+            'model_loaded': True,
+            'timestamp': datetime.now().isoformat(),
+            'available_intents': len(INTENTS),
+            'cache_stats': self.model.get_cache_stats()
+        }
 
 # Основной блок запуска
 if __name__ == "__main__":
@@ -842,47 +893,121 @@ if __name__ == "__main__":
     # Инициализация классификатора с конфигурацией
     logger.info("2. Инициализация классификатора...")
     config = Config()
+    config.USE_ATTENTION = True
     config.USE_DATA_AUGMENTATION = True
+    config.USE_LEMMATIZATION = LEMMATIZATION_AVAILABLE
     config.USE_STOP_WORDS = True
     config.USE_CACHE = True
-    
+    config.EXPORT_TO_ONNX = False
+
     classifier = PetStoreIntentClassifier(config)
     
     # Подготовка данных
-    logger.info("3. Подготовка данных...")
+    logger.info("3. Подготовка данных(предобработка + аугментация)...")
     X, y = classifier.prepare_data(texts, labels, augment=True)
     logger.info(f"   - Размер матрицы признаков: {X.shape}")
+    logger.info(f"   - Уникальных токенов: {len(classifier.tokenizer.word_index)}")
     
-    # Разделение с стратификацией 
+    # Разделение на train/test
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.2, random_state=42, stratify=y  
     )
     logger.info(f"   - Train: {len(X_train)} примеров")
     logger.info(f"   - Test: {len(X_test)} примеров")
     
-    # Обучение
-    logger.info("4. Обучение модели...")
+    # Построение модели
+    logger.info("4. Построение модели...")
     classifier.build_model()
     classifier.model.summary()
-    classifier.train(X_train, y_train, X_test, y_test)
+    
+    # Кросс-валидация
+    if len(X_train) > 50:
+        logger.info("5. Выполнение кросс-валидации...")
+        try:
+            cv_results = classifier.train_with_cross_validation(X_train, y_train, n_folds=3)
+            logger.info(f"   - Средняя точность CV: {cv_results['mean_accuracy']:.4f} (+/- {cv_results['std_accuracy']:.4f})")
+        except Exception as e:
+            logger.warning(f"Кросс-валидация не выполнена: {e}")
+    
+    # Обучение на полных данных
+    logger.info("6. Финальное обучение...")
+    try:
+        history = classifier.train(X_train, y_train, X_test, y_test)
+    except Exception as e:
+        logger.error(f"Ошибка при обучении: {e}")
+        history = classifier.train(X_train, y_train)
     
     # Оценка
-    logger.info("5. Оценка модели...")
-    loss, accuracy = classifier.evaluate(X_test, y_test)
-    logger.info(f"   - Точность на тесте: {accuracy:.4f}")
+    logger.info("7. Оценка модели на тестовых данных...")
+    try:
+        evaluation = classifier.evaluate_model(X_test, y_test)
+        logger.info(f"   - Точность (Accuracy): {evaluation['accuracy']:.4f}")
+        logger.info(f"   - Потери (Loss): {evaluation['loss']:.4f}")
+        logger.info(f"   - Precision (weighted): {evaluation['detailed_metrics']['precision_weighted']:.4f}")
+        logger.info(f"   - Recall (weighted): {evaluation['detailed_metrics']['recall_weighted']:.4f}")
+        logger.info(f"   - F1-score (weighted): {evaluation['detailed_metrics']['f1_weighted']:.4f}")
+        
+        if 'roc_auc_scores' in evaluation:
+            top_auc = sorted(evaluation['roc_auc_scores'].items(), key=lambda x: x[1], reverse=True)[:3]
+            logger.info("   - Лучшие ROC-AUC:")
+            for intent, auc_score in top_auc:
+                logger.info(f"       {intent}: {auc_score:.4f}")
+    except Exception as e:
+        logger.error(f"Ошибка при расширенной оценке: {e}")
+        eval_results = classifier.model.evaluate(X_test, y_test, verbose=0)
+        loss = eval_results[0]
+        accuracy = eval_results[1]
+        logger.info(f"   - Loss: {loss:.4f}")
+        logger.info(f"   - Точность (Accuracy): {accuracy:.4f}")
     
-    # Тест предсказаний
-    logger.info("6. Тестирование предсказаний...")
-    test_queries = ["Найди корм для кошек", "Сколько стоит ошейник"]
+    # Демонстрация предсказаний
+    logger.info("8. Тестирование предсказаний...")
+    test_queries = [
+        "Найди корм для кошек",
+        "Сколько стоит ошейник",
+        "Как вернуть товар",
+        "Бонусная карта",
+        "У собаки температура"
+    ]
+    
     for query in test_queries:
-        intent, confidence = classifier.predict(query)
-        logger.info(f"   - '{query}' → {intent} (conf: {confidence:.3f})")
+        try:
+            intent, confidence = classifier.predict(query)
+            logger.info(f"   - '{query}' → {intent} (confidence: {confidence:.3f})")
+        except Exception as e:
+            logger.error(f"Ошибка при предсказании '{query}': {e}")
     
-    # Сохранение
-    logger.info("7. Сохранение модели...")
-    save_path = 'ai_model/pet_store_model_v3'
-    classifier.save_model(save_path)
+    # Статистика кэша
+    cache_stats = classifier.get_cache_stats()
+    if 'hit_rate' in cache_stats and cache_stats.get('hits', 0) > 0:
+        logger.info(f"9. Статистика кэша: {cache_stats['hit_rate']*100:.1f}% попаданий")
+        logger.info(f"   - Попаданий: {cache_stats['hits']}, Промахов: {cache_stats['misses']}")
+    
+    # Визуализация
+    logger.info("10. Визуализация результатов...")
+    classifier.plot_training_history()
+    
+    # Сохранение модели
+    logger.info("11. Сохранение модели...")
+    save_path = 'ai_model/pet_store_model_v3_fixed'
+    try:
+        classifier.save_model(save_path)
+        logger.info(f"   - Модель сохранена в: {save_path}")
+    except Exception as e:
+        logger.error(f"Ошибка при сохранении модели: {e}")
     
     logger.info("=" * 60)
     logger.info("Обучение завершено!")
     logger.info("=" * 60)
+    
+    # Итоговая статистика
+    print("\n" + "=" * 60)
+    print("ИТОГОВЫЙ ОТЧЁТ ПО УЛУЧШЕНИЯМ:")
+    print("=" * 60)
+    print(f"✓ Размер датасета: {len(texts)} примеров")
+    print(f"✓ Число классов: {len(INTENTS)}")
+    print(f"✓ Кэш предсказаний: {'включён' if config.USE_CACHE else 'выключен'}")
+    print(f"✓ Механизм внимания: {'включён' if config.USE_ATTENTION else 'выключен'}")
+    print(f"✓ Лемматизация: {'доступна' if LEMMATIZATION_AVAILABLE else 'недоступна'}")
+    print(f"✓ Аугментация данных: {'включена' if config.USE_DATA_AUGMENTATION else 'выключена'}")
+    print("=" * 60)
