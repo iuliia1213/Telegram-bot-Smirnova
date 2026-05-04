@@ -304,11 +304,15 @@ class PetStoreIntentClassifier:
                 processed_labels.append(label)
                    
         self.tokenizer.fit_on_texts(processed_texts)
+
         sequences = self.tokenizer.texts_to_sequences(processed_texts)
         X = pad_sequences(sequences, maxlen=self.max_sequence_length, padding='post', truncating='post')
         
         # Кодирование меток в числа
         y = self.label_encoder.fit_transform(processed_labels)
+
+        if self.config.USE_PRETRAINED_EMBEDDINGS and FASTTEXT_AVAILABLE:
+            self.embedding_matrix = self._create_embedding_matrix(self.tokenizer.word_index)
 
         logger.info(f"Подготовлено {len(processed_texts)} примеров")
         return X, y
@@ -316,14 +320,22 @@ class PetStoreIntentClassifier:
     # Создадим архитектуры нейросети
     def build_model(self) -> tf.keras.Model:
         inputs = tf.keras.Input(shape=(self.max_sequence_length,)) 
+
+        if self.embedding_matrix is not None:
+            # Embedding слой
+            embedding = layers.Embedding(
+                self.vocab_size, self.embedding_size,
+                weights=[self.embedding_matrix],
+                trainable=True,
+                input_length=self.max_sequence_length
+            )(inputs)
+       else:
+            embedding = layers.Embedding(
+                self.vocab_size, self.embedding_size,
+                input_length=self.max_sequence_length,
+                mask_zero=True
+            )(inputs)
     
-        # Embedding слой
-        embedding = layers.Embedding(
-            self.vocab_size, self.embedding_size,
-            input_length=self.max_sequence_length
-        )(inputs)
-    
-        # Spatial Dropout
         embedding = layers.SpatialDropout1D(0.2)(embedding)
     
         # Выбор типа RNN 
