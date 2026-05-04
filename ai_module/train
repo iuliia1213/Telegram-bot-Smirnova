@@ -104,6 +104,33 @@ SYNONYMS = {
     'цена': ['стоимость', 'сколько стоит', 'почём', 'ценник'],
 }
 
+# Добавление кэша предсказаний
+class PredictionCache:  
+    def __init__(self, max_size: int = 1000):
+        self.cache = {}
+        self.max_size = max_size
+        self.hits = 0
+        self.misses = 0
+    
+    def get(self, key: str):
+        if key in self.cache:
+            self.hits += 1
+            return self.cache[key]
+        self.misses += 1
+        return None
+    
+    def set(self, key: str, value):
+        if len(self.cache) >= self.max_size:
+            oldest_key = next(iter(self.cache))
+            del self.cache[oldest_key]
+        self.cache[key] = value
+    
+    def get_stats(self):
+        total = self.hits + self.misses
+        hit_rate = self.hits / total if total > 0 else 0
+        return {'hits': self.hits, 'misses': self.misses, 'hit_rate': hit_rate}
+
+
 # Классификатор пользовательских намерений для запросов, связанных с зоомагазином
 # Используем в работе рекуррентную нейронную сеть (RNN) с слоями LSTM
 class PetStoreIntentClassifier:
