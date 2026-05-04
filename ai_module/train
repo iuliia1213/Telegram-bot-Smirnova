@@ -271,7 +271,17 @@ class PetStoreIntentClassifier:
                 new_word = random.choice(SYNONYMS[word])
                 new_text = ' '.join(words[:i] + [new_word] + words[i+1:])
                 augmented.append(new_text)
-    
+
+        if len(words) >= 3 and random.random() < 0.3:
+            shuffled = words.copy()
+            random.shuffle(shuffled)
+            augmented.append(' '.join(shuffled))
+        
+        if len(words) >= 4 and random.random() < 0.2:
+            remove_idx = random.randint(0, len(words)-1)
+            shortened = words[:remove_idx] + words[remove_idx+1:]
+            augmented.append(' '.join(shortened))
+        
         return list(set(augmented))
     
 
