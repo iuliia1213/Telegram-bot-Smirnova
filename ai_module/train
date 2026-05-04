@@ -274,7 +274,10 @@ class PetStoreIntentClassifier:
         outputs = layers.Dense(len(INTENTS), activation='softmax')(dense2)
     
         model = tf.keras.Model(inputs=inputs, outputs=outputs)
-    
+
+        # Оптимизатор с gradient clipping
+        optimizer = tf.keras.optimizers.Adam(learning_rate=self.config.INITIAL_LEARNING_RATE,
+                                        clipnorm=self.config.GRADIENT_CLIP_NORM)
         
         model.compile(optimizer=optimizer, loss='sparse_categorical_crossentropy', metrics=['accuracy'])
     
