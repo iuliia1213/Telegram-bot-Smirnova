@@ -352,11 +352,11 @@ class PetStoreIntentClassifier:
 
             # Сохраняем токенизатор
             with open(os.path.join(path, 'tokenizer.pkl'), 'wb') as f:
-            pickle.dump(self.tokenizer, f)
+                pickle.dump(self.tokenizer, f)
 
             # Сохраняем метки
             with open(os.path.join(path, 'label_encoder.pkl'), 'wb') as f:
-            pickle.dump(self.label_encoder, f)
+                pickle.dump(self.label_encoder, f)
 
             # Сохраняем конфигурацию в json
             config_data = {
@@ -367,7 +367,7 @@ class PetStoreIntentClassifier:
             }
 
             with open(os.path.join(path, 'config.json'), 'w', encoding='utf-8') as f:
-            json.dump(config_data, f, ensure_ascii=False, indent=2)
+                json.dump(config_data, f, ensure_ascii=False, indent=2)
 
             logging.info(f"model успешно сохранена в {path}")
       
