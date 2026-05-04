@@ -420,9 +420,27 @@ class PetStoreIntentClassifier:
         # Обратное преобразование метки
         intent  = self.label_encoder.inverse_transform([pred_class])[0]
         return intent, float(confidence)
+
+   def predict_batch(self, texts: List[str]) -> List[Tuple[str, float]]:  
+        clean_texts = [self._preprocess_text(t) for t in texts]
+        sequences = self.tokenizer.texts_to_sequences(clean_texts)
+        X_input = pad_sequences(sequences, maxlen=self.max_sequence_length,
+                           padding='post', truncating='post')
+    
+        all_predictions = self.model.predict(X_input, verbose=0)
+        results = []
+    
+        for predictions in all_predictions:
+            pred_class = np.argmax(predictions)
+            confidence = predictions[pred_class]
+            intent = self.label_encoder.inverse_transform([pred_class])[0]
+            results.append((intent, float(confidence)))
+    
+        return results
+            
     
     # Создадим тренировочный набор данных для обучения
-def create_dataset() -> Tuple[List[str], List[str]]:
+    def create_dataset() -> Tuple[List[str], List[str]]:
     
     texts = []
     labels = []
