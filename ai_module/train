@@ -155,6 +155,10 @@ class PetStoreIntentClassifier:
                                    filters='!"#$%&()*+,-./:;<=>?@[\\]^_`{|}~\t\n') # Добавлен filters
         self.label_encoder = LabelEncoder()
         self.model = None
+        self.training_history = None # Пока нет истории
+
+        # Кэш
+    self.cache = PredictionCache(max_size=self.config.CACHE_SIZE) if self.config.USE_CACHE else None
 
     # Подготовим данные для обучения: токенизация и кодирование меток   
     def prepare_data(self, texts: List[str], labels: List[str]) -> Tuple[np.ndarray, np.ndarray]:
