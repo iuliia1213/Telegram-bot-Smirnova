@@ -225,7 +225,7 @@ class PetStoreIntentClassifier:
     
     # Создадим архитектуры нейросети
     def build_model(self) -> tf.keras.Model:
-        inputs = tf.keras.Input(shape=(self.max_sequence_length,))  # ← ИЗМЕНИТЬ на Functional API
+        inputs = tf.keras.Input(shape=(self.max_sequence_length,)) 
     
         # Embedding слой
         embedding = layers.Embedding(
@@ -236,7 +236,7 @@ class PetStoreIntentClassifier:
         # Spatial Dropout
         embedding = layers.SpatialDropout1D(0.2)(embedding)
     
-        # Выбор типа RNN (НОВОЕ)
+        # Выбор типа RNN 
         if self.config.USE_GRU:
             lstm_out = layers.Bidirectional(
                 layers.GRU(64, return_sequences=True, dropout=self.config.DROPOUT_RATE,
@@ -256,7 +256,9 @@ class PetStoreIntentClassifier:
             lstm_out = layers.Dense(64, activation='tanh')(lstm_out)
         else:
             lstm_out = layers.GlobalMaxPooling1D()(lstm_out)
-    
+
+        # Batch Normalization 
+        lstm_out = layers.BatchNormalization()(lstm_out)
            
         # Полносвязные слои с L2 регуляризацией
         dense1 = layers.Dense(128, activation='relu',
