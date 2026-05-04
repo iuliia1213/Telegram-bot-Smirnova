@@ -444,6 +444,192 @@ class PetStoreIntentClassifier:
         
         return self.training_history
 
+    def train_with_cross_validation(self, X: np.ndarray, y: np.ndarray, 
+                                   n_folds: int = 3) -> Dict[str, float]:
+        skf = StratifiedKFold(n_splits=n_folds, shuffle=True, random_state=42)
+        cv_scores = []
+        
+        for fold, (train_idx, val_idx) in enumerate(skf.split(X, y)):
+            logger.info(f"Fold {fold + 1}/{n_folds}")
+            
+            X_train_fold, X_val_fold = X[train_idx], X[val_idx]
+            y_train_fold, y_val_fold = y[train_idx], y[val_idx]
+            
+            self.model = None
+            self.build_model()
+            
+            self.train(X_train_fold, y_train_fold, X_val_fold, y_val_fold)
+            
+            results = self.model.evaluate(X_val_fold, y_val_fold, verbose=0)
+            cv_scores.append(results[1])
+        
+        return {
+            'mean_accuracy': np.mean(cv_scores),
+            'std_accuracy': np.std(cv_scores),
+            'fold_scores': cv_scores
+        }
+    
+    def predict(self, text: str, use_cache: bool = True) -> Tuple[str, float]:
+        clean_text = self._preprocess_text(text)
+        
+        if use_cache and self.cache is not None:
+            cached = self.cache.get(clean_text)
+            if cached is not None:
+                return cached
+        
+        sequence = self.tokenizer.texts_to_sequences([clean_text])
+        X_input = pad_sequences(sequence, maxlen=self.max_sequence_length,
+                               padding='post', truncating='post')
+        
+        predictions = self.model.predict(X_input, verbose=0)[0]
+        pred_class = np.argmax(predictions)
+        confidence = predictions[pred_class]
+        
+        intent = self.label_encoder.inverse_transform([pred_class])[0]
+        
+        if use_cache and self.cache is not None:
+            self.cache.set(clean_text, (intent, float(confidence)))
+        
+        return intent, float(confidence)
+    
+    def predict_batch(self, texts: List[str]) -> List[Tuple[str, float]]:
+        clean_texts = [self._preprocess_text(t) for t in texts]
+        sequences = self.tokenizer.texts_to_sequences(clean_texts)
+        X_input = pad_sequences(sequences, maxlen=self.max_sequence_length,
+                               padding='post', truncating='post')
+        
+        all_predictions = self.model.predict(X_input, verbose=0)
+        results = []
+        
+        for i, predictions in enumerate(all_predictions):
+            pred_class = np.argmax(predictions)
+            confidence = predictions[pred_class]
+            intent = self.label_encoder.inverse_transform([pred_class])[0]
+            results.append((intent, float(confidence)))
+        
+        return results
+    
+    def predict_with_confidence_threshold(self, text: str, threshold: float = 0.6) -> Tuple[str, float, bool]:
+        intent, confidence = self.predict(text)
+        is_confident = confidence >= threshold
+        return intent, confidence, is_confident
+    
+    def calculate_detailed_metrics(self, X_test: np.ndarray, y_test: np.ndarray) -> Dict[str, Any]:
+        y_pred_proba = self.model.predict(X_test, verbose=0)
+        y_pred = np.argmax(y_pred_proba, axis=1)
+        
+        metrics = {
+            'precision_weighted': precision_score(y_test, y_pred, average='weighted', zero_division=0),
+            'recall_weighted': recall_score(y_test, y_pred, average='weighted', zero_division=0),
+            'f1_weighted': f1_score(y_test, y_pred, average='weighted', zero_division=0),
+            'precision_macro': precision_score(y_test, y_pred, average='macro', zero_division=0),
+            'recall_macro': recall_score(y_test, y_pred, average='macro', zero_division=0),
+            'f1_macro': f1_score(y_test, y_pred, average='macro', zero_division=0),
+            'precision_micro': precision_score(y_test, y_pred, average='micro', zero_division=0),
+            'recall_micro': recall_score(y_test, y_pred, average='micro', zero_division=0),
+            'f1_micro': f1_score(y_test, y_pred, average='micro', zero_division=0)
+        }
+        
+        return metrics
+    
+    def evaluate_model(self, X_test: np.ndarray, y_test: np.ndarray) -> Dict[str, Any]:
+        # Получаем базовые метрики 
+        eval_results = self.model.evaluate(X_test, y_test, verbose=0)
+        loss = eval_results[0]
+        accuracy = eval_results[1]
+        
+        detailed_metrics = self.calculate_detailed_metrics(X_test, y_test)
+        
+        y_pred_proba = self.model.predict(X_test, verbose=0)
+        y_pred = np.argmax(y_pred_proba, axis=1)
+        
+        # Получаем только существующие классы
+        from sklearn.utils.multiclass import unique_labels
+        present_labels = unique_labels(y_test, y_pred)
+        present_names = [self.label_encoder.inverse_transform([l])[0] for l in present_labels]
+    
+        report = classification_report(y_test, y_pred, 
+                                 labels=present_labels,
+                                 target_names=present_names,
+                                 output_dict=True,
+                                 zero_division=0)
+        
+        cm = confusion_matrix(y_test, y_pred)
+        
+        y_test_one_hot = tf.keras.utils.to_categorical(y_test, num_classes=len(INTENTS))
+        roc_auc_scores = {}
+        
+        for i in range(len(INTENTS)):
+            try:
+                if len(np.unique(y_test_one_hot[:, i])) > 1:
+                    fpr, tpr, _ = roc_curve(y_test_one_hot[:, i], y_pred_proba[:, i])
+                    roc_auc = auc(fpr, tpr)
+                    roc_auc_scores[INTENTS[i]] = roc_auc
+                else:
+                    roc_auc_scores[INTENTS[i]] = 0.5
+            except:
+                roc_auc_scores[INTENTS[i]] = 0.5
+        
+        results = {
+            'loss': float(loss),
+            'accuracy': float(accuracy),
+            'detailed_metrics': detailed_metrics,
+            'classification_report': report,
+            'confusion_matrix': cm,
+            'roc_auc_scores': roc_auc_scores
+        }
+        
+        if self.config.SAVE_CONFUSION_MATRIX and VIZ_AVAILABLE:
+            self._plot_confusion_matrix(cm)
+        
+        if self.config.SAVE_ROC_CURVES and VIZ_AVAILABLE:
+            self._plot_roc_curves(y_test_one_hot, y_pred_proba)
+        
+        return results
+    
+    def _plot_confusion_matrix(self, cm: np.ndarray):
+        try:
+            plt.figure(figsize=(14, 12))
+            sns.heatmap(cm, annot=True, fmt='d', cmap='Blues',
+                       xticklabels=self.label_encoder.classes_,
+                       yticklabels=self.label_encoder.classes_)
+            plt.title('Матрица ошибок классификации намерений')
+            plt.xlabel('Предсказанные классы')
+            plt.ylabel('Истинные классы')
+            plt.xticks(rotation=45, ha='right')
+            plt.yticks(rotation=0)
+            plt.tight_layout()
+            plt.savefig('confusion_matrix.png', dpi=300)
+            plt.close()
+            logger.info("Сохранена матрица ошибок: confusion_matrix.png")
+        except Exception as e:
+            logger.warning(f"Не удалось сохранить матрицу ошибок: {e}")
+    
+    def _plot_roc_curves(self, y_true_one_hot: np.ndarray, y_pred_proba: np.ndarray):
+        try:
+            plt.figure(figsize=(12, 8))
+            
+            for i, intent in enumerate(INTENTS):
+                if len(np.unique(y_true_one_hot[:, i])) > 1:
+                    fpr, tpr, _ = roc_curve(y_true_one_hot[:, i], y_pred_proba[:, i])
+                    roc_auc = auc(fpr, tpr)
+                    plt.plot(fpr, tpr, label=f'{intent} (AUC = {roc_auc:.3f})')
+            
+            plt.plot([0, 1], [0, 1], 'k--', label='Случайный классификатор')
+            plt.xlim([0.0, 1.0])
+            plt.ylim([0.0, 1.05])
+            plt.xlabel('False Positive Rate')
+            plt.ylabel('True Positive Rate')
+            plt.title('ROC-кривые для всех классов')
+            plt.legend(loc="lower right", fontsize=8)
+            plt.grid(True, alpha=0.3)
+            plt.tight_layout()
+            plt.savefig('roc_curves.png', dpi=300)
+            plt.close()
+            logger.info("Сохранены ROC-кривые: roc_curves.png")
+        except Exception as e:
+            logger.warning(f"Не удалось сохранить ROC-кривые: {e}")
+
     # Сохранение модели и компонентов
     def save_model(self, path: str):
         try:
@@ -460,22 +646,45 @@ class PetStoreIntentClassifier:
             with open(os.path.join(path, 'label_encoder.pkl'), 'wb') as f:
                 pickle.dump(self.label_encoder, f)
 
+            if self.cache is not None:
+                with open(os.path.join(path, 'cache_stats.pkl'), 'wb') as f:
+                    pickle.dump(self.cache.get_stats(), f)
+
             # Сохраняем конфигурацию в json
             config_data = {
                 'vocab_size': self.vocab_size,
                 'max_sequence_length': self.max_sequence_length,
                 'embedding_size': self.embedding_size,
                 'intents': INTENTS
+                'use_attention': self.config.USE_ATTENTION,
+                'use_gru': self.config.USE_GRU,
+                'use_pretrained_embeddings': self.config.USE_PRETRAINED_EMBEDDINGS
             }
 
             with open(os.path.join(path, 'config.json'), 'w', encoding='utf-8') as f:
                 json.dump(config_data, f, ensure_ascii=False, indent=2)
+
+            if self.config.EXPORT_TO_ONNX and ONNX_AVAILABLE:
+                self.export_to_onnx(os.path.join(path, 'model.onnx'))
 
             logging.info(f"model успешно сохранена в {path}")
       
       except Exception as e:
           logging.error(f"Ошибка при сохранении модели: {e}")
           raise
+
+    def export_to_onnx(self, path: str = 'model.onnx'):
+        if not ONNX_AVAILABLE:
+            logger.warning("ONNX недоступен")
+            return
+        
+        try:
+            spec = (tf.TensorSpec((None, self.max_sequence_length), tf.int32, name="input"),)
+            model_proto, _ = tf2onnx.convert.from_keras(self.model, input_signature=spec)
+            onnx.save(model_proto, path)
+            logger.info(f"Модель экспортирована в ONNX: {path}")
+        except Exception as e:
+            logger.error(f"Ошибка экспорта в ONNX: {e}")
 
     # Загрузка модели из каталога
     @classmethod
