@@ -90,7 +90,7 @@ class Config:
    # Аугментация данных и предобработка
     USE_DATA_AUGMENTATION = True
     USE_STOP_WORDS = True
-    USE_LEMMATIZATION = True
+    USE_LEMMATIZATION = False  # Отключаем лемматизацию
     AUGMENTATION_PROBABILITY = 0.3
     
     # Кэширование предсказаний
