@@ -91,7 +91,7 @@ class Config:
     USE_DATA_AUGMENTATION = True
     USE_STOP_WORDS = True
     USE_LEMMATIZATION = False  # Отключаем лемматизацию
-    AUGMENTATION_PROBABILITY = 0.3
+    AUGMENTATION_PROBABILITY = 0.5
     
     # Кэширование предсказаний
     USE_CACHE = True
@@ -307,12 +307,12 @@ class PetStoreIntentClassifier:
             processed_texts.append(clean_text)
             processed_labels.append(label)
 
-        # Аугментация 
-        if augment and self.config.USE_DATA_AUGMENTATION:
-            augmented_texts = self._augment_text(clean_text)
-            for aug_text in augmented_texts[1:]:
-                processed_texts.append(aug_text)
-                processed_labels.append(label)
+            # Аугментация 
+            if augment and self.config.USE_DATA_AUGMENTATION:
+                augmented_texts = self._augment_text(clean_text)
+                for aug_text in augmented_texts[1:]:
+                    processed_texts.append(aug_text)
+                    processed_labels.append(label)
 
         # Обучение токенизатора
         self.tokenizer.fit_on_texts(processed_texts)
@@ -345,7 +345,7 @@ class PetStoreIntentClassifier:
                 trainable=True,
                 input_length=self.max_sequence_length
             )(inputs)
-       else:
+        else:
             # Обучаемый слой эмбеддингов
             embedding = layers.Embedding(
                 self.vocab_size, self.embedding_size,
@@ -679,7 +679,7 @@ class PetStoreIntentClassifier:
                 'vocab_size': self.vocab_size,
                 'max_sequence_length': self.max_sequence_length,
                 'embedding_size': self.embedding_size,
-                'intents': INTENTS
+                'intents': INTENTS,
                 'use_attention': self.config.USE_ATTENTION,
                 'use_gru': self.config.USE_GRU,
                 'use_pretrained_embeddings': self.config.USE_PRETRAINED_EMBEDDINGS
