@@ -1,0 +1,66 @@
+
+import json
+import os
+import re
+from typing import List, Dict, Optional
+
+class ProductDB:
+    def __init__(self, file_path: str = "products.json"):
+        self.file_path = file_path
+        self.products = []
+        self._load_products()
+    
+    # Загружает товары из JSON-файла
+    def _load_products(self):
+        if os.path.exists(self.file_path):
+            with open(self.file_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                self.products = data.get('products', [])
+            print(f"[INFO] Загружено {len(self.products)} товаров")
+        else:
+            print(f"[WARNING] Файл {self.file_path} не найден")
+            self.products = []
+    
+    #  Поиск товаров по текстовому запросу
+    def search_products(self, query: str, max_results: int = 5) -> List[Dict]:
+        if not self.products:
+            return []
+        
+        query_lower = query.lower()
+        results = []
+        
+        for product in self.products:
+            # Ищем совпадения в названии и категории
+            name_match = query_lower in product['name'].lower()
+            category_match = query_lower in product.get('category', '').lower()
+            brand_match = query_lower in product.get('brand', '').lower()
+            
+            # Проверяем отдельные ключевые слова
+            keywords = query_lower.split()
+            keyword_match = any(
+                keyword in product['name'].lower() or 
+                keyword in product.get('category', '').lower()
+                for keyword in keywords
+            )
+            
+            if name_match or category_match or keyword_match or brand_match:
+                results.append(product)
+        
+        return results[:max_results]
+    # Форматирует список товаров в читаемый ответ
+    def format_product_response(self, products: List[Dict]) -> str:
+        if not products:
+            return "🔍 К сожалению, по вашему запросу ничего не найдено.\n\nПопробуйте:\n• изменить формулировку\n• спросить про другую категорию товаров"
+        
+        response = "🐾 **Вот что мне удалось найти:**\n\n"
+        for i, product in enumerate(products, 1):
+            availability = "✅ в наличии" if product.get('availability', False) else "❌ нет в наличии"
+            response += f"{i}. **{product['name']}**\n"
+            response += f"   📦 Вес: {product.get('weight', '—')}\n"
+            response += f"   💰 Цена: {product['price']} руб.\n"
+            response += f"   📦 {availability}\n"
+            if product.get('description'):
+                response += f"   📝 {product['description'][:100]}...\n"
+            response += "\n"
+        
+        return response
