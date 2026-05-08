@@ -40,4 +40,7 @@ pymorphy2==0.9.1
 matplotlib==3.7.5 
 
 # Для визуализации 
-seaborn==0.13.0     
+seaborn==0.13.0
+
+# Сервер для запуска на Render
+uvicorn==0.34.0
