@@ -1,7 +1,7 @@
 # Обработчики для администраторов и разработчиков.
 # Включает команды для управления ботом и просмотра отчетов.
 
-from aiogram import Router, F
+from aiogram import Router, F, Dispatcher
 from aiogram.types import Message, CallbackQuery
 from aiogram.filters import Command, CommandObject
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -160,3 +160,9 @@ async def cmd_broadcast(message: Message, command: CommandObject):
         f"Отправлено: {result['sent']}\n"
         f"Ошибок: {result['failed']}"
     )
+def register_admin_handlers(dp: Dispatcher):
+    """
+    Регистрирует все обработчики администратора из этого файла в диспетчере
+    Вызывается из handlers/__init__.py
+    """
+    dp.include_router(router)
