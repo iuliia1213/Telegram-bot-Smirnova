@@ -19,11 +19,11 @@ from aiogram.types import BotCommand, BotCommandScopeDefault
 from dotenv import load_dotenv
 
 from database.engine import init_db, close_db
-from bot.handlers import register_all_handlers
 from bot.middlewares import register_all_middlewares
 from bot.utils.logger import setup_logger
 from bot.utils.scheduler import setup_scheduler
-from product_db import ProductDB 
+from product_db import ProductDB
+from handlers import register_all_handlers
 
 
 # Загрузка переменных окружения
