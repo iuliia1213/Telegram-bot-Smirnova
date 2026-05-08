@@ -14,8 +14,8 @@ aiofiles==24.1.0
 
 # Для ИИ модуля (обучение собственной нейросети)
 tensorflow==2.19.0
-numpy==2.2.0
-scikit-learn==1.6.0
+numpy==1.26.4
+scikit-learn==1.5.2
 pandas==2.2.3
 
 # Для парсинга данных с сайта
@@ -37,7 +37,7 @@ pytest-asyncio==0.24.0
 pymorphy2==0.9.1
 
 # Для визуализации  
-matplotlib==3.8.0 
+matplotlib==3.7.5 
 
 # Для визуализации 
 seaborn==0.13.0     
