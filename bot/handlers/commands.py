@@ -2,7 +2,7 @@
 # commands.py - Обработка основных команд бота с интеграцией товарной базы из products.json
 
 import logging
-from aiogram import Router, F
+from aiogram import Router, F, types, Dispatcher
 from aiogram.types import Message, CallbackQuery
 from aiogram.filters import Command, CommandObject
 from aiogram.fsm.context import FSMContext
@@ -667,3 +667,10 @@ async def handle_text_message(message: Message, session: AsyncSession):
             "Или свяжитесь с оператором по телефону 8-800-XXX-XX-XX"
         )
         await message.answer(fallback_text)
+        
+def register_commands_handlers(dp: Dispatcher):
+    """
+    Регистрирует все обработчики команд из этого файла в диспетчере
+    Вызывается из handlers/__init__.py
+    """
+    dp.include_router(router)
