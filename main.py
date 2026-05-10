@@ -24,7 +24,7 @@ from aiogram.types import BotCommand, BotCommandScopeDefault
 from dotenv import load_dotenv
 
 from database.engine import init_db, close_db
-from bot.middlewares import register_all_middlewares
+from bot.middlewares.logging import LoggingMiddleware, register_all_middlewares
 from bot.utils.logger import setup_logger
 from bot.utils.scheduler import setup_scheduler
 
@@ -35,6 +35,9 @@ print(f"Содержимое текущей директории: {os.listdir('.
 # Проверяем наличие папки bot
 if os.path.exists('bot'):
     print(f"Папка 'bot' найдена. Содержимое: {os.listdir('bot')}")
+    # Проверим папку middlewares
+    if os.path.exists('bot/middlewares'):
+        print(f"Папка 'bot/middlewares' найдена. Содержимое: {os.listdir('bot/middlewares')}")
 else:
     print("ОШИБКА: Папка 'bot' не найдена!")
 
