@@ -44,3 +44,6 @@ seaborn==0.13.0
 
 # Сервер для запуска на Render
 uvicorn==0.34.0
+
+# Минимальный веб-сервер для Render Web Service
+flask==3.0.3
