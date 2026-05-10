@@ -27,8 +27,49 @@ from database.engine import init_db, close_db
 from bot.middlewares import register_all_middlewares
 from bot.utils.logger import setup_logger
 from bot.utils.scheduler import setup_scheduler
+
+print("ДИАГНОСТИКА: проверка структуры папок")
+print(f"Текущая директория: {os.getcwd()}")
+print(f"Содержимое текущей директории: {os.listdir('.')}")
+
+# Проверяем наличие папки bot
+if os.path.exists('bot'):
+    print(f"Папка 'bot' найдена. Содержимое: {os.listdir('bot')}")
+else:
+    print("ОШИБКА: Папка 'bot' не найдена!")
+
+# Пытаемся импортировать с детальной обработкой ошибок
+try:
+    from bot.middlewares import register_all_middlewares
+    print("✅ Импорт bot.middlewares УСПЕШЕН")
+except ImportError as e:
+    print(f"❌ ОШИБКА импорта bot.middlewares: {e}")
+    # Пробуем альтернативные варианты импорта
+    try:
+        import bot
+        print(f"Пакет bot загружен,但他的 путь: {bot.__file__}")
+        print(f"Атрибуты bot: {dir(bot)}")
+    except ImportError as e2:
+        print(f"Не удалось импортировать пакет bot: {e2}")
+    raise
+
+try:
+    from bot.utils.logger import setup_logger
+    print("✅ Импорт bot.utils.logger УСПЕШЕН")
+except ImportError as e:
+    print(f"❌ ОШИБКА импорта bot.utils.logger: {e}")
+    raise
+
+try:
+    from bot.utils.scheduler import setup_scheduler
+    print("✅ Импорт bot.utils.scheduler УСПЕШЕН")
+except ImportError as e:
+    print(f"❌ ОШИБКА импорта bot.utils.scheduler: {e}")
+    raise
+
 from product_db import ProductDB
 from handlers import register_all_handlers
+# ===================================================
 
 
 # Загрузка переменных окружения
