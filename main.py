@@ -151,7 +151,11 @@ def run_web_server():
   
 
 async def main():
-    # Основная функция запуска бота.
+    # Основная функция запуска бота
+    # Очищаем вебхук (на случай, если он был настроен ранее)
+    await bot.delete_webhook(drop_pending_updates=True)
+    logger.info("Webhook удалён, переходим на polling")
+    
     # Регистрация функций запуска и остановки
     dp.startup.register(on_startup)
     dp.shutdown.register(on_shutdown)
