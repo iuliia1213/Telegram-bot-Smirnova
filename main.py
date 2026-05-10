@@ -7,6 +7,11 @@ import os
 import sys
 from pathlib import Path
 
+# для веб-сервера и фонового потока ( для Render)
+import threading
+from flask import Flask
+
+
 # Добавляем корневую директорию в путь для импортов
 sys.path.append(str(Path(__file__).parent))
 
@@ -125,15 +130,38 @@ async def on_shutdown():
     
     logger.info("Бот остановлен")
 
+# ВЕБ-СЕРВЕР ДЛЯ RENDER
+# Создаем минимальное веб-приложение Flask
+web_app = Flask(__name__)
+
+@web_app.route('/')
+def health_check():
+    # Эндпоинт для проверки работоспособности сервиса
+    return "Бот работает!", 200
+
+@web_app.route('/health')
+def health():
+    # Альтернативный эндпоинт для health check
+    return "OK", 200
+
+def run_web_server():
+    # Запускает веб-сервер в отдельном потоке (нужно для Render)
+    port = int(os.environ.get('PORT', 10000))
+    web_app.run(host='0.0.0.0', port=port)
+  
+
 async def main():
-    """
-    Основная функция запуска бота.
-    """
+    # Основная функция запуска бота.
     # Регистрация функций запуска и остановки
     dp.startup.register(on_startup)
     dp.shutdown.register(on_shutdown)
-    
-    # Запуск поллинга
+
+    # Запуск веб-сервера в фоновом потоке (нужно для Render)
+    web_thread = threading.Thread(target=run_web_server, daemon=True)
+    web_thread.start()
+    logger.info("Веб-сервер для Render запущен в фоновом потоке на порту " + os.environ.get('PORT', '10000'))
+        
+    # Запуск поллинга (основной поток, здесь бот будет принимать сообщения)
     try:
         logger.info("Запуск поллинга...")
         await dp.start_polling(bot)
