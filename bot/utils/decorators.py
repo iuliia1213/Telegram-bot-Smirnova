@@ -1,8 +1,5 @@
-
 # Декораторы для проверки прав доступа и логирования действий.
 # Обеспечивают 3 уровня доступа: разработчик, администратор, пользователь.
-
-
 from functools import wraps
 from typing import List, Optional
 from aiogram.types import Message, CallbackQuery
@@ -72,9 +69,7 @@ def require_role(allowed_roles: List[UserRole]):
 
 def require_auth(func):
     
-    # Декоратор для проверки аутентификации пользователя.
-    # Автоматически регистрирует нового пользователя.
-    
+    # Декоратор для проверки аутентификации пользователя. Автоматически регистрирует нового пользователя.
     @wraps(func)
     async def wrapper(message: Message, *args, **kwargs):
         session = kwargs.get('session')
