@@ -9,7 +9,7 @@ from sqlalchemy import select, func
 
 from database.models import User, UserRole, UserLog, Order, Product
 from bot.utils.decorators import require_role
-from bot.keyboards.admin import get_admin_keyboard, get_reports_keyboard
+from bot.keyboards.main import get_admin_keyboard, get_reports_keyboard
 from bot.utils.reports import generate_activity_report, generate_sales_report
 
 router = Router()
@@ -18,7 +18,7 @@ router = Router()
 @require_role([UserRole.ADMIN, UserRole.DEVELOPER])
 async def cmd_admin_panel(message: Message):
     
-    # Панель администратора.
+    # Панель администратора
     # Доступна только для пользователей с ролью ADMIN или DEVELOPER.
     
     await message.answer(
