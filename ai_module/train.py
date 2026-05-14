@@ -74,6 +74,7 @@ class Config:
     USE_ATTENTION = True          # Механизм внимания
     USE_GRU = False               #  GRU
     USE_PRETRAINED_EMBEDDINGS = False
+    PRETRAINED_EMBEDDINGS_PATH = "fasttext/cc.ru.300.bin"  # Путь к файлу предобученных эмбеддингов
 
     # Регуляризация
     DROPOUT_RATE = 0.5
@@ -787,7 +788,7 @@ class PetStoreIntentClassifier:
         texts = []
         labels = []
 
-        # ==================== 1. ПОИСК ТОВАРА (find_product) - 40 примеров ====================
+        #  1. ПОИСК ТОВАРА (find_product) - 40 примеров
         find_product_examples = [
         ("Найди корм для собак", "find_product"),
         ("Покажи товары для кошек", "find_product"),
@@ -831,7 +832,7 @@ class PetStoreIntentClassifier:
         ("Подбери минеральный камень", "find_product"),
     ]
     
-    # ==================== 2. ИНФОРМАЦИЯ О ТОВАРЕ (get_product_info) - 35 примеров ====================
+    # 2. ИНФОРМАЦИЯ О ТОВАРЕ (get_product_info) - 35 примеров 
     product_info_examples = [
         ("Расскажи о корме Роял Канин", "get_product_info"),
         ("Что входит в состав корма", "get_product_info"),
@@ -870,7 +871,7 @@ class PetStoreIntentClassifier:
         ("Отзывы покупателей о товаре", "get_product_info"),
     ]
     
-    # ==================== 3. ПРОВЕРКА ЦЕНЫ (check_price) - 35 примеров ====================
+    # 3. ПРОВЕРКА ЦЕНЫ (check_price) - 35 примеров 
     price_examples = [
         ("Сколько стоит корм", "check_price"),
         ("Цена на игрушки", "check_price"),
@@ -909,7 +910,7 @@ class PetStoreIntentClassifier:
         ("Стоимость возврата товара", "check_price"),
     ]
     
-    # ==================== 4. ПРОВЕРКА НАЛИЧИЯ (check_availability) - 35 примеров ====================
+    #  4. ПРОВЕРКА НАЛИЧИЯ (check_availability) - 35 примеров 
     availability_examples = [
         ("Есть ли в наличии корм", "check_availability"),
         ("Можно ли купить игрушку", "check_availability"),
@@ -948,7 +949,7 @@ class PetStoreIntentClassifier:
         ("Можно ли забрать сегодня", "check_availability"),
     ]
     
-    # ==================== 5. СОВЕТЫ ПО УХОДУ (get_care_advice) - 40 примеров ====================
+    #  5. СОВЕТЫ ПО УХОДУ (get_care_advice) - 40 примеров 
     care_advice_examples = [
         ("Как ухаживать за собакой", "get_care_advice"),
         ("Посоветуйте корм для кота", "get_care_advice"),
@@ -992,7 +993,7 @@ class PetStoreIntentClassifier:
         ("Как выбрать пелёнку для щенка", "get_care_advice"),
     ]
     
-    # ==================== 6. ВОПРОСЫ О ДОСТАВКЕ (ask_delivery) - 35 примеров ====================
+    #  6. ВОПРОСЫ О ДОСТАВКЕ (ask_delivery) - 35 примеров 
     delivery_examples = [
         ("Как заказать доставку", "ask_delivery"),
         ("Сроки доставки", "ask_delivery"),
@@ -1031,7 +1032,7 @@ class PetStoreIntentClassifier:
         ("Поздравление с доставкой", "ask_delivery"),
     ]
     
-    # ==================== 7. ВОПРОСЫ ОБ ОПЛАТЕ (ask_payment) - 35 примеров ====================
+    # 7. ВОПРОСЫ ОБ ОПЛАТЕ (ask_payment) - 35 примеров 
     payment_examples = [
         ("Какие способы оплаты", "ask_payment"),
         ("Можно оплатить картой", "ask_payment"),
@@ -1070,7 +1071,7 @@ class PetStoreIntentClassifier:
         ("Автоплатеж", "ask_payment"),
     ]
     
-    # ==================== 8. АКЦИИ И СКИДКИ (ask_promotions) - 35 примеров ====================
+    #  8. АКЦИИ И СКИДКИ (ask_promotions) - 35 примеров 
     promotions_examples = [
         ("Какие сейчас акции", "ask_promotions"),
         ("Есть ли скидки", "ask_promotions"),
@@ -1109,7 +1110,7 @@ class PetStoreIntentClassifier:
         ("Как получить промокод", "ask_promotions"),
     ]
     
-    # ==================== 9. ВОЗВРАТ ТОВАРА (return_product) - 30 примеров ====================
+    #  9. ВОЗВРАТ ТОВАРА (return_product) - 30 примеров 
     return_examples = [
         ("Как вернуть товар", "return_product"),
         ("Хочу обменять товар", "return_product"),
@@ -1143,7 +1144,7 @@ class PetStoreIntentClassifier:
         ("Обмен на другой товар", "return_product"),
     ]
     
-    # ==================== 10. ПРОГРАММА ЛОЯЛЬНОСТИ (loyalty_program) - 30 примеров ====================
+    #  10. ПРОГРАММА ЛОЯЛЬНОСТИ (loyalty_program) - 30 примеров
     loyalty_examples = [
         ("Как получить бонусы", "loyalty_program"),
         ("Карта лояльности", "loyalty_program"),
@@ -1177,7 +1178,7 @@ class PetStoreIntentClassifier:
         ("Служба поддержки лояльности", "loyalty_program"),
     ]
     
-    # ==================== 11. ВЕТЕРИНАРНЫЕ СОВЕТЫ (veterinary_advice) - 30 примеров ====================
+    # 11. ВЕТЕРИНАРНЫЕ СОВЕТЫ (veterinary_advice) - 30 примеров 
     vet_advice_examples = [
         ("У котенка понос", "veterinary_advice"),
         ("Собака кашляет", "veterinary_advice"),
@@ -1211,7 +1212,7 @@ class PetStoreIntentClassifier:
         ("Как ухаживать за больным питомцем", "veterinary_advice"),
     ]
     
-    # ==================== 12. ПРИВЕТСТВИЯ (greeting) - 25 примеров ====================
+    #  12. ПРИВЕТСТВИЯ (greeting) - 25 примеров 
     greeting_examples = [
         ("Привет", "greeting"),
         ("Здравствуйте", "greeting"),
@@ -1240,7 +1241,7 @@ class PetStoreIntentClassifier:
         ("Мир вашему дому", "greeting"),
     ]
     
-    # ==================== 13. ПРОЩАНИЯ (goodbye) - 25 примеров ====================
+    #  13. ПРОЩАНИЯ (goodbye) - 25 примеров 
     goodbye_examples = [
         ("Пока", "goodbye"),
         ("До свидания", "goodbye"),
@@ -1269,7 +1270,7 @@ class PetStoreIntentClassifier:
         ("Выхожу из чата", "goodbye"),
     ]
     
-    # ==================== 14. ПОМОЩЬ (help) - 25 примеров ====================
+    #  14. ПОМОЩЬ (help) - 25 примеров 
     help_examples = [
         ("Помогите", "help"),
         ("Что ты умеешь", "help"),
@@ -1298,7 +1299,7 @@ class PetStoreIntentClassifier:
         ("Инструкция", "help"),
     ]
     
-    # ==================== 15. ПРОЧИЕ (other) - 25 примеров ====================
+    #  15. ПРОЧИЕ (other) - 25 примеров
     other_examples = [
         ("Не знаю что спросить", "other"),
         ("Просто тест", "other"),
@@ -1327,9 +1328,9 @@ class PetStoreIntentClassifier:
         ("Новости дня", "other"),
     ]
     
-        # ==================== ДОПОЛНИТЕЛЬНЫЕ 500+ ПРИМЕРОВ ====================
+        #  ДОПОЛНИТЕЛЬНЫЕ +500 ПРИМЕРОВ 
     
-    # ----- Дополнительные примеры для ПОИСКА ТОВАРА (find_product) +30 -----
+    # Дополнительные примеры для ПОИСКА ТОВАРА (find_product) +30 
     additional_find_product = [
         ("Найди корм", "find_product"),
         ("Покажи всё для кошек", "find_product"),
@@ -1363,7 +1364,7 @@ class PetStoreIntentClassifier:
         ("Найди зеркальце для птиц", "find_product"),
     ]
     
-    # ----- Дополнительные примеры для ИНФОРМАЦИИ О ТОВАРЕ (get_product_info) +30 -----
+    #  Дополнительные примеры для ИНФОРМАЦИИ О ТОВАРЕ (get_product_info) +30 
     additional_product_info = [
         ("Расскажи про корм Роял Канин", "get_product_info"),
         ("Что в составе ошейника", "get_product_info"),
@@ -1397,7 +1398,7 @@ class PetStoreIntentClassifier:
         ("Инструкция по применению", "get_product_info"),
     ]
     
-    # ----- Дополнительные примеры для ЦЕНЫ (check_price) +30 -----
+    #  Дополнительные примеры для ЦЕНЫ (check_price) +30 
     additional_price = [
         ("Сколько стоит ошейник", "check_price"),
         ("Какая цена на корм", "check_price"),
@@ -1431,7 +1432,7 @@ class PetStoreIntentClassifier:
         ("Цена с доставкой", "check_price"),
     ]
     
-    # ----- Дополнительные примеры для НАЛИЧИЯ (check_availability) +30 -----
+    #  Дополнительные примеры для НАЛИЧИЯ (check_availability) +30 
     additional_availability = [
         ("Есть ли в наличии", "check_availability"),
         ("Товар доступен", "check_availability"),
@@ -1465,7 +1466,7 @@ class PetStoreIntentClassifier:
         ("Скоро в продаже", "check_availability"),
     ]
     
-    # ----- Дополнительные примеры для СОВЕТОВ ПО УХОДУ (get_care_advice) +40 -----
+    #  Дополнительные примеры для СОВЕТОВ ПО УХОДУ (get_care_advice) +40 
     additional_care = [
         ("Как мыть собаку", "get_care_advice"),
         ("Чем кормить котёнка", "get_care_advice"),
@@ -1509,7 +1510,7 @@ class PetStoreIntentClassifier:
         ("Как одеть питомца", "get_care_advice"),
     ]
     
-    # ----- Дополнительные примеры для ДОСТАВКИ (ask_delivery) +30 -----
+    #  Дополнительные примеры для ДОСТАВКИ (ask_delivery) +30 
     additional_delivery = [
         ("Как оформить доставку", "ask_delivery"),
         ("Когда привезут", "ask_delivery"),
@@ -1543,7 +1544,7 @@ class PetStoreIntentClassifier:
         ("Поздравление с заказом", "ask_delivery"),
     ]
     
-    # ----- Дополнительные примеры для ОПЛАТЫ (ask_payment) +30 -----
+    #  Дополнительные примеры для ОПЛАТЫ (ask_payment) +30 
     additional_payment = [
         ("Как оплатить", "ask_payment"),
         ("Принимаете карты", "ask_payment"),
@@ -1577,7 +1578,7 @@ class PetStoreIntentClassifier:
         ("Досрочное погашение", "ask_payment"),
     ]
     
-    # ----- Дополнительные примеры для АКЦИЙ (ask_promotions) +30 -----
+    #  Дополнительные примеры для АКЦИЙ (ask_promotions) +30 
     additional_promotions = [
         ("Акции сегодня", "ask_promotions"),
         ("Скидки на корма", "ask_promotions"),
@@ -1611,7 +1612,7 @@ class PetStoreIntentClassifier:
         ("Как получить промокод", "ask_promotions"),
     ]
     
-    # ----- Дополнительные примеры для ВОЗВРАТА (return_product) +20 -----
+    #  Дополнительные примеры для ВОЗВРАТА (return_product) +20 
     additional_return = [
         ("Как вернуть", "return_product"),
         ("Обменять товар", "return_product"),
@@ -1635,7 +1636,7 @@ class PetStoreIntentClassifier:
         ("Передумал", "return_product"),
     ]
     
-    # ----- Дополнительные примеры для ЛОЯЛЬНОСТИ (loyalty_program) +20 -----
+    #  Дополнительные примеры для ЛОЯЛЬНОСТИ (loyalty_program) +20 
     additional_loyalty = [
         ("Как получить бонусы", "loyalty_program"),
         ("Карта лояльности", "loyalty_program"),
@@ -1659,7 +1660,7 @@ class PetStoreIntentClassifier:
         ("Проверка баланса", "loyalty_program"),
     ]
     
-    # ----- Дополнительные примеры для ВЕТЕРИНАРНЫХ СОВЕТОВ (veterinary_advice) +20 -----
+    #  Дополнительные примеры для ВЕТЕРИНАРНЫХ СОВЕТОВ (veterinary_advice) +20 
     additional_vet = [
         ("Симптомы у кота", "veterinary_advice"),
         ("Собака плохо ест", "veterinary_advice"),
@@ -1683,7 +1684,7 @@ class PetStoreIntentClassifier:
         ("Профилактика глистов", "veterinary_advice"),
     ]
     
-    # ----- Дополнительные примеры для ПРИВЕТСТВИЙ (greeting) +20 -----
+    #  Дополнительные примеры для ПРИВЕТСТВИЙ (greeting) +20 
     additional_greeting = [
         ("Хай", "greeting"),
         ("Здорово", "greeting"),
@@ -1707,7 +1708,7 @@ class PetStoreIntentClassifier:
         ("Приятно познакомиться", "greeting"),
     ]
     
-    # ----- Дополнительные примеры для ПРОЩАНИЙ (goodbye) +20 -----
+    #  Дополнительные примеры для ПРОЩАНИЙ (goodbye) +20 
     additional_goodbye = [
         ("Пока", "goodbye"),
         ("До завтра", "goodbye"),
@@ -1731,7 +1732,7 @@ class PetStoreIntentClassifier:
         ("Завершаю диалог", "goodbye"),
     ]
     
-    # ----- Дополнительные примеры для ПОМОЩИ (help) +30 -----
+    #  Дополнительные примеры для ПОМОЩИ (help) +30 
     additional_help = [
         ("Помогите выбрать", "help"),
         ("Что ты можешь", "help"),
@@ -1765,7 +1766,7 @@ class PetStoreIntentClassifier:
         ("Демонстрация", "help"),
     ]
     
-    # ----- Дополнительные примеры для ПРОЧИХ (other) +30 -----
+    #  Дополнительные примеры для ПРОЧИХ (other) +30 
     additional_other = [
         ("Абракадабра", "other"),
         ("Не знаю", "other"),
@@ -1799,7 +1800,7 @@ class PetStoreIntentClassifier:
         ("Как хочешь", "other"),
     ]
     
-    # ----- Добавляем дополнительные примеры -----
+    #  Добавляем дополнительные примеры 
     find_product_examples.extend(additional_find_product)
     product_info_examples.extend(additional_product_info)
     price_examples.extend(additional_price)
@@ -1934,14 +1935,14 @@ if __name__ == "__main__":
     classifier.model.summary()
     
     # Кросс-валидация (если данных достаточно)
-    if len(X_train) > 50:
-        logger.info("5. Выполнение кросс-валидации...")
-        try:
-            cv_results = classifier.train_with_cross_validation(X_train, y_train, n_folds=3)
-            logger.info(f"   - Средняя точность CV: {cv_results['mean_accuracy']:.4f} (+/- {cv_results['std_accuracy']:.4f})")
-        except Exception as e:
-            logger.warning(f"Кросс-валидация не выполнена: {e}")
-    
+    #if len(X_train) > 50:
+    #    logger.info("5. Выполнение кросс-валидации...")
+    #    try:
+    #        cv_results = classifier.train_with_cross_validation(X_train, y_train, n_folds=3)
+    #        logger.info(f"   - Средняя точность CV: {cv_results['mean_accuracy']:.4f} (+/- {cv_results['std_accuracy']:.4f})")
+    #    except Exception as e:
+    #        logger.warning(f"Кросс-валидация не выполнена: {e}")
+    # Сразу переходим к финальному обучению
     # Обучение на полных данных
     logger.info("6. Финальное обучение...")
     try:
