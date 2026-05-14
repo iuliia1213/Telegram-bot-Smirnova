@@ -10,9 +10,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from database.models import User, UserRole, UserLog
-from bot.keyboards.main import get_main_keyboard, get_help_keyboard
 from bot.utils.decorators import require_auth, log_action
 from ai_module.predict import get_ai_response
+from bot.keyboards.main import (
+    get_main_keyboard, 
+    get_help_keyboard,
+    get_catalog_keyboard,
+    get_admin_keyboard,
+    get_reports_keyboard,
+    get_settings_keyboard
+)
 
 # Импорт товарной базы из JSON-файла
 from product_db import ProductDB
@@ -20,7 +27,6 @@ from product_db import ProductDB
 router = Router()
 
 #  КОРЗИНА (хранение в памяти) 
-
 user_carts = {}
 
 
@@ -308,7 +314,7 @@ async def cmd_catalog(message: Message, session: AsyncSession):
     # Обработчик команды /catalog.
     # Отображает каталог товаров с категориями.
     
-    from bot.keyboards.catalog import get_catalog_keyboard
+    from bot.keyboards.main import get_catalog_keyboard
     
     await message.answer(
         "📦 <b>Каталог товаров 'Четыре Лапы'</b>\n\n"
@@ -569,7 +575,7 @@ async def cmd_settings(message: Message, session: AsyncSession):
     # Обработчик команды /settings.
     # Отображает меню настроек бота.
     
-    from bot.keyboards.settings import get_settings_keyboard
+    from bot.keyboards.main import get_settings_keyboard
     
     user_id = message.from_user.id
     result = await session.execute(
@@ -667,7 +673,397 @@ async def handle_text_message(message: Message, session: AsyncSession):
             "Или свяжитесь с оператором по телефону 8-800-XXX-XX-XX"
         )
         await message.answer(fallback_text)
-        
+#  ПРОСТЫЕ ОБРАБОТЧИКИ ПРИВЕТСТВИЙ И ПРОЩАНИЙ (без ИИ)
+
+# Список приветственных фраз
+GREETING_WORDS = [
+    "привет", "здравствуй", "здравствуйте", "добрый день", 
+    "доброе утро", "добрый вечер", "хай", "хелло", "hello", 
+    "приветствую", "салют", "здарова", "здаров", "ку", "йоу",
+    "доброго времени суток", "рад встрече", "рада встрече"
+]
+
+# Список прощальных фраз
+GOODBYE_WORDS = [
+    "пока", "до свидания", "прощай", "прощайте", "увидимся",
+    "до встречи", "до скорого", "всего доброго", "всего хорошего",
+    "счастливо", "бай", "bye", "goodbye", "гудбай", "чао",
+    "до связи", "спокойной ночи", "доброй ночи", "удачи",
+    "завершить", "выход", "стоп", "хватит"
+]
+
+# Список фраз для вызова администратора
+ADMIN_WORDS = [
+    "админ", "администратор", "оператор", "человек", "живой человек",
+    "позови админа", "позвать админа", "связь с оператором",
+    "нужен человек", "хочу поговорить с человеком", "консультант",
+    "живой консультант", "поддержка", "служба поддержки"
+]
+
+# Список фраз благодарности
+THANKS_WORDS = [
+    "спасибо", "благодарю", "спс", "thx", "thanks", "thank you",
+    "от души", "благодарствую", "выручил", "помог"
+]
+
+
+@router.message(F.text.lower().in_(GREETING_WORDS))
+async def greeting_handler(message: Message):
+    """
+    Обработчик приветственных фраз.
+    Отвечает дружелюбно и показывает, что умеет бот.
+    """
+    user_name = message.from_user.first_name or "друг"
+    
+    # Разные варианты приветствий для разнообразия
+    import random
+    greetings = [
+        f"👋 Здравствуйте, {user_name}! Рады видеть вас в зоомагазине «Четыре Лапы»! Чем могу помочь?",
+        f"🐾 Привет, {user_name}! Мяу-гав! Я ваш помощник по товарам для животных. Что ищете?",
+        f"😊 Добрый день, {user_name}! Как ваш питомец? Я здесь, чтобы помочь с выбором!",
+        f"🌟 Здравствуйте! Я бот-консультант «Четыре Лапы». Подсказать что-нибудь?",
+    ]
+    
+    await message.answer(
+        random.choice(greetings) + "\n\n"
+        "Я могу помочь:\n"
+        "🔍 Найти товар — просто напишите, что ищете\n"
+        "📋 Показать каталог — /catalog\n"
+        "🛒 Работать с корзиной — /cart\n"
+        "❓ Рассказать о командах — /help"
+    )
+
+
+@router.message(F.text.lower().in_(GOODBYE_WORDS))
+async def goodbye_handler(message: Message):
+    """
+    Обработчик прощальных фраз.
+    Прощается и предлагает вернуться.
+    """
+    user_name = message.from_user.first_name or "друг"
+    
+    import random
+    goodbyes = [
+        f"👋 До свидания, {user_name}! Будем рады видеть вас снова! Хорошего дня!",
+        f"🐾 Пока, {user_name}! Мяу-гав! Заходите ещё за вкусняшками для питомца!",
+        f"😊 Всего доброго, {user_name}! Если понадобится помощь — я всегда здесь!",
+        f"🌟 До встречи, {user_name}! Пусть ваш питомец будет счастлив и здоров!",
+    ]
+    
+    await message.answer(random.choice(goodbyes))
+
+
+@router.message(F.text.lower().in_(ADMIN_WORDS))
+async def admin_handler(message: Message):
+    """
+    Обработчик запросов на связь с администратором.
+    """
+    await message.answer(
+        "📞 <b>Нужна помощь человека?</b>\n\n"
+        "Вы можете связаться с оператором:\n"
+        "📧 Email: support@4lapy.ru\n"
+        "📱 Телефон: 8-800-XXX-XX-XX\n\n"
+        "🕐 Время работы: с 9:00 до 21:00\n\n"
+        "Или просто напишите ваш вопрос здесь, и я постараюсь помочь!",
+        parse_mode="HTML"
+    )
+
+
+@router.message(F.text.lower().in_(THANKS_WORDS))
+async def thanks_handler(message: Message):
+    """
+    Обработчик благодарностей.
+    """
+    import random
+    replies = [
+        "😊 Всегда пожалуйста! Рада помочь!",
+        "🐾 На здоровье! Пушистого вам настроения!",
+        "🌟 Обращайтесь ещё! Я всегда на связи!",
+        "💚 Приятно помогать! Хорошего дня вам и вашему питомцу!",
+    ]
+    
+    await message.answer(random.choice(replies))
+
+
+@router.message(F.text.lower().in_(["что ты умеешь", "что ты можешь", "твои возможности", "команды"]))
+async def capabilities_handler(message: Message):
+    
+    # Обработчик вопроса о возможностях бота
+    
+    await message.answer(
+        "🐾 <b>Вот что я умею:</b>\n\n"
+        "🔍 <b>Поиск товаров</b> — просто напишите, что ищете\n"
+        "📋 <b>Каталог</b> — /catalog\n"
+        "💰 <b>Узнать цену</b> — /price [название]\n"
+        "📦 <b>Проверить наличие</b> — /stock [название]\n"
+        "🛒 <b>Корзина</b> — /cart\n"
+        "➕ <b>Добавить в корзину</b> — /add [ID]\n"
+        "✅ <b>Оформить заказ</b> — /checkout\n"
+        "📞 <b>Позвать админа</b> — напишите «администратор»\n\n"
+        "<b>Подробнее:</b> /help",
+        parse_mode="HTML"
+    )
+
+
+@router.message(F.text.lower().in_(["как дела", "как ты", "как жизнь", "как настроение"]))
+async def how_are_you_handler(message: Message):
+    
+    # Обработчик вопроса «как дела».
+    
+    import random
+    replies = [
+        "😊 У меня всё отлично! Я всегда готов помогать с выбором товаров для питомцев!",
+        "🐾 Прекрасно! Особенно когда нахожу для вас лучшие товары!",
+        "🤖 Я бот, поэтому всегда в форме! Что ищете сегодня?",
+        "💚 Замечательно! Особенно когда помогаю заботиться о любимых питомцах!",
+    ]
+    
+    await message.answer(random.choice(replies))
+
+
+@router.message(F.text.lower().in_(["бот", "ты бот", "ты робот", "ты живой", "ты настоящий"]))
+async def bot_identity_handler(message: Message):
+    
+    # Обработчик вопроса о том, бот ли это.
+    
+    await message.answer(
+        "🤖 Да, я бот-помощник зоомагазина «Четыре Лапы»!\n\n"
+        "Но я создан, чтобы помогать вам с выбором товаров для ваших любимых питомцев 🐾\n\n"
+        "Если нужен живой человек — напишите «администратор»!"
+    )
+
+#  ОБРАБОТЧИКИ КНОПОК ОСНОВНОЙ КЛАВИАТУРЫ
+
+@router.message(F.text == "📦 Каталог")
+async def button_catalog(message: Message, session: AsyncSession):
+    """Обработчик кнопки «Каталог»."""
+    await message.answer(
+        "📦 <b>Каталог товаров 'Четыре Лапы'</b>\n\n"
+        "Выберите категорию товаров:",
+        reply_markup=get_catalog_keyboard(session),
+        parse_mode="HTML"
+    )
+
+
+@router.message(F.text == "🔍 Поиск")
+async def button_search(message: Message):
+    """Обработчик кнопки «Поиск»."""
+    await message.answer(
+        "🔍 <b>Поиск товаров</b>\n\n"
+        "Просто напишите, что вы ищете, и я найду это в каталоге!\n\n"
+        "Например: <i>корм для собак, игрушка для кошек, ошейник</i>",
+        parse_mode="HTML"
+    )
+
+
+@router.message(F.text == "🛒 Корзина")
+async def button_cart(message: Message):
+    """Обработчик кнопки «Корзина»."""
+    user_id = message.from_user.id
+    cart = user_carts.get(user_id, [])
+
+    if not cart:
+        await message.answer(
+            "🛒 <b>Ваша корзина</b>\n\n"
+            "Пока здесь пусто.\n\n"
+            "🔍 Найдите товары через поиск и добавьте их в корзину!",
+            parse_mode="HTML"
+        )
+        return
+
+    total = 0
+    response = "🛒 <b>Ваша корзина</b>\n\n"
+    for i, item in enumerate(cart, 1):
+        product = item['product']
+        quantity = item['quantity']
+        subtotal = product['price'] * quantity
+        total += subtotal
+        response += (
+            f"{i}. <b>{product['name']}</b>\n"
+            f"   💰 {product['price']} ₽ × {quantity} = {subtotal} ₽\n"
+            f"   🆔 ID: {product.get('id', '—')}\n\n"
+        )
+    response += f"<b>💰 Итого: {total} ₽</b>\n\n"
+    response += "✅ Оформить заказ: /checkout\n"
+    response += "🗑 Очистить корзину: /clear_cart"
+
+    await message.answer(response, parse_mode="HTML")
+
+
+@router.message(F.text == "👤 Профиль")
+async def button_profile(message: Message, session: AsyncSession):
+    """Обработчик кнопки «Профиль»."""
+    user_id = message.from_user.id
+    result = await session.execute(
+        select(User).where(User.telegram_id == user_id)
+    )
+    user = result.scalar_one_or_none()
+
+    if not user:
+        await message.answer("❌ Профиль не найден. Используйте /start для регистрации.")
+        return
+
+    profile_text = (
+        f"👤 <b>Мой профиль</b>\n\n"
+        f"🆔 ID: <code>{user.telegram_id}</code>\n"
+        f"📛 Имя: {user.first_name or 'Не указано'}\n"
+        f"🔖 Username: @{user.username or 'Не указан'}\n"
+        f"📅 Зарегистрирован: {user.created_at.strftime('%d.%m.%Y') if user.created_at else 'Неизвестно'}\n"
+        f"⭐️ Статус: {user.role.value if user.role else 'Пользователь'}"
+    )
+
+    await message.answer(profile_text, parse_mode="HTML")
+
+
+@router.message(F.text == "❤️ Избранное")
+async def button_favorites(message: Message):
+    """Обработчик кнопки «Избранное»."""
+    await message.answer(
+        "❤️ <b>Избранные товары</b>\n\n"
+        "Здесь будут храниться ваши любимые товары.\n"
+        "Чтобы добавить товар в избранное, найдите его через поиск!",
+        parse_mode="HTML"
+    )
+
+
+@router.message(F.text == "🎁 Акции")
+async def button_promotions(message: Message):
+    """Обработчик кнопки «Акции»."""
+    await message.answer(
+        "🎁 <b>Акции и скидки</b>\n\n"
+        "🔥 Сейчас действуют специальные предложения:\n"
+        "• Скидка 15% на все корма для кошек\n"
+        "• При покупке 2 игрушек — третья в подарок\n"
+        "• Бесплатная доставка при заказе от 3000 ₽\n\n"
+        "Уточняйте подробности в каталоге!",
+        parse_mode="HTML"
+    )
+
+
+@router.message(F.text == "❓ Помощь")
+async def button_help(message: Message):
+    """Обработчик кнопки «Помощь»."""
+    help_text = (
+        "📚 <b>Справка по боту 'Четыре Лапы'</b>\n\n"
+        "<b>Поиск товаров:</b>\n"
+        "• Напишите, что ищете — я найду!\n"
+        "• Команда /search [название]\n\n"
+        "<b>Корзина и заказы:</b>\n"
+        "• Кнопка 🛒 Корзина — посмотреть заказ\n"
+        "• /add [ID] — добавить товар\n"
+        "• /checkout — оформить заказ\n\n"
+        "<b>Автор проекта:</b>\n"
+        "Смирнова Ю.С.\n"
+        "Студент группы о.ИЗДтв 23.1/Б3-23\n"
+        "Дипломный проект 2026"
+    )
+
+    await message.answer(help_text, reply_markup=get_help_keyboard(), parse_mode="HTML")
+
+
+@router.message(F.text == "⚙️ Настройки")
+async def button_settings(message: Message, session: AsyncSession):
+    """Обработчик кнопки «Настройки»."""
+    user_id = message.from_user.id
+    result = await session.execute(
+        select(User).where(User.telegram_id == user_id)
+    )
+    user = result.scalar_one()
+
+    from database.models import UserSettings
+    settings_result = await session.execute(
+        select(UserSettings).where(UserSettings.user_id == user.id)
+    )
+    settings = settings_result.scalar_one_or_none()
+
+    if not settings:
+        settings = UserSettings(user_id=user.id)
+        session.add(settings)
+        await session.commit()
+        await session.refresh(settings)
+
+    settings_text = (
+        "⚙️ <b>Настройки бота</b>\n\n"
+        f"🔔 Уведомления: {'✅ Вкл' if settings.notifications_enabled else '❌ Выкл'}\n"
+        f"📧 Email-уведомления: {'✅ Вкл' if settings.email_notifications else '❌ Выкл'}\n"
+        f"🌐 Язык: {settings.language}\n"
+        f"🎨 Тема: {settings.theme}\n"
+        f"📄 Товаров на странице: {settings.items_per_page}\n"
+        f"🗑 Автоудаление: {'✅ Вкл' if settings.auto_delete_messages else '❌ Выкл'}\n\n"
+        "Выберите пункт для изменения:"
+    )
+
+    await message.answer(settings_text, reply_markup=get_settings_keyboard(settings), parse_mode="HTML")
+
+
+@router.message(F.text == "ℹ️ О магазине")
+async def button_about(message: Message):
+    """Обработчик кнопки «О магазине»."""
+    await message.answer(
+        "ℹ️ <b>О магазине «Четыре Лапы»</b>\n\n"
+        "🐾 Мы — крупнейшая сеть зоомагазинов в России!\n\n"
+        "📦 Более 10 000 товаров для ваших питомцев\n"
+        "🚚 Быстрая доставка по всей стране\n"
+        "💳 Удобные способы оплаты\n"
+        "⭐️ Гарантия качества от проверенных брендов\n\n"
+        "Работаем с любовью к животным с 2005 года!",
+        parse_mode="HTML"
+    )
+
+
+@router.message(F.text == "📞 Связь с нами")
+async def button_contact(message: Message):
+    """Обработчик кнопки «Связь с нами»."""
+    await message.answer(
+        "📞 <b>Связь с нами</b>\n\n"
+        "📱 Телефон горячей линии: 8-800-XXX-XX-XX\n"
+        "📧 Email: support@4lapy.ru\n"
+        "🕐 Время работы: ежедневно с 9:00 до 21:00\n\n"
+        "💬 Или просто напишите ваш вопрос здесь!\n"
+        "Если нужен живой оператор — напишите «администратор».",
+        parse_mode="HTML"
+    )
+
+
+@router.message(F.text == "📝 Отзывы")
+async def button_reviews(message: Message):
+    """Обработчик кнопки «Отзывы»."""
+    await message.answer(
+        "📝 <b>Отзывы</b>\n\n"
+        "Мы ценим ваше мнение! Напишите свой отзыв о нашем магазине прямо в чат, "
+        "и мы обязательно его учтём.\n\n"
+        "⭐️ Также вы можете оценить товары после покупки!",
+        parse_mode="HTML"
+    )
+
+
+@router.message(F.text == "🏠 Главная")
+async def button_home(message: Message, session: AsyncSession):
+    """Обработчик кнопки «Главная» — возвращает основную клавиатуру."""
+    user_id = message.from_user.id
+    result = await session.execute(
+        select(User).where(User.telegram_id == user_id)
+    )
+    user = result.scalar_one_or_none()
+    role = user.role if user else UserRole.USER
+
+    await message.answer(
+        "🏠 Вы на главной. Выберите действие:",
+        reply_markup=get_main_keyboard(role)
+    )
+
+
+@router.message(F.text == "👑 Админ")
+async def button_admin(message: Message):
+    """Обработчик кнопки «Админ» (только для админов)."""
+    await message.answer(
+        "👑 <b>Панель администратора</b>\n\n"
+        "Выберите действие:",
+        reply_markup=get_admin_keyboard(),
+        parse_mode="HTML"
+    )
+
+
 def register_commands_handlers(dp: Dispatcher):
     """
     Регистрирует все обработчики команд из этого файла в диспетчере
