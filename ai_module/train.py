@@ -694,9 +694,9 @@ class PetStoreIntentClassifier:
 
             logging.info(f"model успешно сохранена в {path}")
       
-      except Exception as e:
-          logging.error(f"Ошибка при сохранении модели: {e}")
-          raise
+        except Exception as e:
+            logging.error(f"Ошибка при сохранении модели: {e}")
+            raise
     # Экспорт модели в формат ONNX
     def export_to_onnx(self, path: str = 'model.onnx'):
         if not ONNX_AVAILABLE:
