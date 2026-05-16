@@ -1137,7 +1137,7 @@ def create_dataset() -> Tuple[List[str], List[str]]:
         ("Подарок не подошел", "return_product"),
         ("Двойной заказ", "return_product"),
         ("Товар не соответствует описанию", "return_product"),
-        ("Отказ от предзаказа", ""return_product"),
+        ("Отказ от предзаказа", "return_product"),
         ("Возврат предоплаты", "return_product"),
         ("Расторжение договора", "return_product"),
         ("Обмен на другой товар", "return_product"),
