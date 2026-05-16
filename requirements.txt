@@ -1,5 +1,6 @@
 # Основные зависимости для Telegram бота
 aiogram>=3.10.0
+requests>=2.31.0
 
 # Базы данных
 SQLAlchemy>=2.0.0
