@@ -787,8 +787,8 @@ def create_dataset() -> Tuple[List[str], List[str]]:
     texts = []
     labels = []
 
-        #  1. ПОИСК ТОВАРА (find_product) - 40 примеров
-        find_product_examples = [
+    #  1. ПОИСК ТОВАРА (find_product) - 40 примеров
+    find_product_examples = [
         ("Найди корм для собак", "find_product"),
         ("Покажи товары для кошек", "find_product"),
         ("Ищу игрушки для собак", "find_product"),
