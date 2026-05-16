@@ -12,7 +12,7 @@ from tensorflow.keras import layers, models
 from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from sklearn.preprocessing import LabelEncoder
-from typing import List, Tuple, Dict
+from typing import List, Tuple, Dict, Optional, Any
 from sklearn.model_selection import train_test_split
 from collections import defaultdict
 from functools import lru_cache
@@ -179,7 +179,6 @@ class PredictionCache:
 
 
 # Классификатор пользовательских намерений для запросов, связанных с зоомагазином
-
 class PetStoreIntentClassifier:
 
     # Инициализация классификатора  
@@ -296,7 +295,7 @@ class PetStoreIntentClassifier:
         return list(set(augmented))
     
 
-    # # Подготовка данных: токенизация, векторизация, кодирование меток   
+    # Подготовка данных: токенизация, векторизация, кодирование меток   
     def prepare_data(self, texts: List[str], labels: List[str], augment: bool = True) -> Tuple[np.ndarray, np.ndarray]:
         processed_texts = []
         processed_labels = []
@@ -783,10 +782,10 @@ class PetStoreIntentClassifier:
             logger.warning(f"Не удалось сохранить график обучения: {e}")
             
     
-    # Создадим тренировочный набор данных для обучения
-    def create_dataset() -> Tuple[List[str], List[str]]:
-        texts = []
-        labels = []
+# Создадим тренировочный набор данных для обучения
+def create_dataset() -> Tuple[List[str], List[str]]:
+    texts = []
+    labels = []
 
         #  1. ПОИСК ТОВАРА (find_product) - 40 примеров
         find_product_examples = [
@@ -1138,7 +1137,7 @@ class PetStoreIntentClassifier:
         ("Подарок не подошел", "return_product"),
         ("Двойной заказ", "return_product"),
         ("Товар не соответствует описанию", "return_product"),
-        ("Отказ от предзаказа", "get_care_advice"),
+        ("Отказ от предзаказа", ""return_product"),
         ("Возврат предоплаты", "return_product"),
         ("Расторжение договора", "return_product"),
         ("Обмен на другой товар", "return_product"),
