@@ -1,16 +1,10 @@
-
 # main.py - Вход в приложение Telegram-бота для зоомагазина "Четыре Лапы". С помощью запускаем бота, инициализируем базу данных и все компоненты.
-
 import asyncio
 import logging
 import os
 import sys
-from pathlib import Path
-
-# для веб-сервера и фонового потока ( для Render)
 import threading
-from flask import Flask
-
+from pathlib import Path
 
 # Добавляем корневую директорию в путь для импортов
 sys.path.append(str(Path(__file__).parent))
@@ -19,61 +13,16 @@ from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
-from aiogram.fsm.storage.redis import RedisStorage
 from aiogram.types import BotCommand, BotCommandScopeDefault
 from dotenv import load_dotenv
+from flask import Flask
 
 from database.engine import init_db, close_db
-from bot.middlewares.logging import LoggingMiddleware, register_all_middlewares
+from bot.middlewares import register_all_middlewares
 from bot.utils.logger import setup_logger
 from bot.utils.scheduler import setup_scheduler
-
-print("ДИАГНОСТИКА: проверка структуры папок")
-print(f"Текущая директория: {os.getcwd()}")
-print(f"Содержимое текущей директории: {os.listdir('.')}")
-
-# Проверяем наличие папки bot
-if os.path.exists('bot'):
-    print(f"Папка 'bot' найдена. Содержимое: {os.listdir('bot')}")
-    # Проверим папку middlewares
-    if os.path.exists('bot/middlewares'):
-        print(f"Папка 'bot/middlewares' найдена. Содержимое: {os.listdir('bot/middlewares')}")
-else:
-    print("ОШИБКА: Папка 'bot' не найдена!")
-
-# Пытаемся импортировать с детальной обработкой ошибок
-try:
-    from bot.middlewares import register_all_middlewares
-    print("✅ Импорт bot.middlewares УСПЕШЕН")
-except ImportError as e:
-    print(f"❌ ОШИБКА импорта bot.middlewares: {e}")
-    # Пробуем альтернативные варианты импорта
-    try:
-        import bot
-        print(f"Пакет bot загружен,但他的 путь: {bot.__file__}")
-        print(f"Атрибуты bot: {dir(bot)}")
-    except ImportError as e2:
-        print(f"Не удалось импортировать пакет bot: {e2}")
-    raise
-
-try:
-    from bot.utils.logger import setup_logger
-    print("✅ Импорт bot.utils.logger УСПЕШЕН")
-except ImportError as e:
-    print(f"❌ ОШИБКА импорта bot.utils.logger: {e}")
-    raise
-
-try:
-    from bot.utils.scheduler import setup_scheduler
-    print("✅ Импорт bot.utils.scheduler УСПЕШЕН")
-except ImportError as e:
-    print(f"❌ ОШИБКА импорта bot.utils.scheduler: {e}")
-    raise
-
+from bot.handlers import register_all_handlers
 from product_db import ProductDB
-from handlers import register_all_handlers
-# ===================================================
-
 
 # Загрузка переменных окружения
 load_dotenv()
@@ -87,16 +36,10 @@ if not BOT_TOKEN:
     logger.error("Токен бота не найден! Установите переменную окружения BOT_TOKEN")
     sys.exit(1)
 
-# Инициализация хранилища состояний
-
-REDIS_URL = os.getenv("REDIS_URL")
-if REDIS_URL:
-    storage = RedisStorage.from_url(REDIS_URL)
-    logger.info("Используется Redis для хранения состояний FSM")
-else:
-    storage = MemoryStorage()
-    logger.warning("Используется MemoryStorage (не рекомендуется для продакшена)")
-
+# Используем MemoryStorage (без Redis)
+storage = MemoryStorage()
+logger.info("Используется MemoryStorage для хранения состояний")
+    
 # Инициализация бота и диспетчера
 bot = Bot(
     token=BOT_TOKEN,
@@ -104,9 +47,24 @@ bot = Bot(
 )
 dp = Dispatcher(storage=storage)
 
-# Загружаем товарную базу
+# Загружаем товарную базу из JSON
 product_db = ProductDB('products.json')
 logger.info(f"Товарная база загружена: {len(product_db.products)} товаров")
+
+# ВЕБ-СЕРВЕР ДЛЯ RENDER 
+web_app = Flask(__name__)
+
+@web_app.route('/')
+def health_check():
+    return "Bot is running!", 200
+
+@web_app.route('/health')
+def health():
+    return "OK", 200
+
+def run_web_server():
+    port = int(os.environ.get('PORT', 10000))
+    web_app.run(host='0.0.0.0', port=port)
 
 async def set_bot_commands():
     
@@ -130,14 +88,14 @@ async def set_bot_commands():
     await bot.set_my_commands(commands, scope=BotCommandScopeDefault())
     logger.info("Команды бота установлены")
 
+# ЗАПУСК И ОСТАНОВКА
 async def on_startup():
-    # Запускаем бота
     logger.info("Запуск бота...")
     
     # Проведем инициализацию базы данных
     await init_db()
     
-    # Установим команды
+    # Установим команд
     await set_bot_commands()
     
     # Зарегистрируем  все обработчики
@@ -155,7 +113,9 @@ async def on_startup():
         manager = AIModelManager()
         manager.load_model()
         logger.info("ИИ-модель загружена успешно")
-    except Exception as e:
+    except ImportError:  # ← отдельно ловит ImportError
+        logger.info("ИИ-модуль не установлен, пропускаем")
+    except Exception as e:  # ← остальные исключения
         logger.warning(f"Не удалось загрузить ИИ-модель: {e}")
     
     logger.info("Бот успешно запущен!")
@@ -174,32 +134,8 @@ async def on_shutdown():
     
     logger.info("Бот остановлен")
 
-# ВЕБ-СЕРВЕР ДЛЯ RENDER
-# Создаем минимальное веб-приложение Flask
-web_app = Flask(__name__)
-
-@web_app.route('/')
-def health_check():
-    # Эндпоинт для проверки работоспособности сервиса
-    return "Бот работает!", 200
-
-@web_app.route('/health')
-def health():
-    # Альтернативный эндпоинт для health check
-    return "OK", 200
-
-def run_web_server():
-    # Запускает веб-сервер в отдельном потоке (нужно для Render)
-    port = int(os.environ.get('PORT', 10000))
-    web_app.run(host='0.0.0.0', port=port)
-  
-
+# ГЛАВНАЯ ФУНКЦИЯ
 async def main():
-    # Основная функция запуска бота
-    # Очищаем вебхук (на случай, если он был настроен ранее)
-    await bot.delete_webhook(drop_pending_updates=True)
-    logger.info("Webhook удалён, переходим на polling")
-    
     # Регистрация функций запуска и остановки
     dp.startup.register(on_startup)
     dp.shutdown.register(on_shutdown)
