@@ -1,6 +1,4 @@
-
-# Модуль для подключения к базе данных PostgreSQL с использованием SQLAlchemy и asyncpg.
-
+# Модуль для подключения к базе данных PostgreSQL и SQLite
 
 import os
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
@@ -9,24 +7,35 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Настройки подключения к PostgreSQL
-DB_USER = os.getenv("DB_USER", "postgres")
-DB_PASSWORD = os.getenv("DB_PASSWORD", "postgres")
-DB_HOST = os.getenv("DB_HOST", "localhost")
-DB_PORT = os.getenv("DB_PORT", "5432")
-DB_NAME = os.getenv("DB_NAME", "petstore_bot")
+# Проверяем, есть ли готовая строка подключения (Render)
+DATABASE_URL = os.getenv("DATABASE_URL")
 
-# Формирование URL для подключения
-DATABASE_URL = f"postgresql+asyncpg://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
-
-# Создание асинхронного движка
-engine = create_async_engine(
-    DATABASE_URL,
-    echo=os.getenv("DB_ECHO", "False").lower() == "true",  # Логирование SQL запросов
-    pool_size=10,
-    max_overflow=20,
-    pool_pre_ping=True  # Проверка соединения перед использованием
-)
+if DATABASE_URL:
+    # Render: используем предоставленную строку подключения PostgreSQL
+    # Заменяем postgresql:// на postgresql+asyncpg:// для асинхронной работы
+    if DATABASE_URL.startswith("postgresql://"):
+        DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://", 1)
+    print(f"Используется PostgreSQL (Render)")
+    
+    # Для PostgreSQL - с параметрами пула
+    engine = create_async_engine(
+        DATABASE_URL,
+        echo=os.getenv("DB_ECHO", "False").lower() == "true",
+        pool_size=10,
+        max_overflow=20,
+        pool_pre_ping=True
+    )
+else:
+    # Локально: используем SQLite
+    SQLITE_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "bot_database.db")
+    DATABASE_URL = f"sqlite+aiosqlite:///{SQLITE_PATH}"
+    print(f"Используется SQLite (локально): {SQLITE_PATH}")
+    
+    # Для SQLite - БЕЗ параметров пула
+    engine = create_async_engine(
+        DATABASE_URL,
+        echo=os.getenv("DB_ECHO", "False").lower() == "true"
+    )
 
 # Создание фабрики сессий
 AsyncSessionLocal = async_sessionmaker(
