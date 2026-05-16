@@ -1,0 +1,52 @@
+# Секретные файлы
+.env
+*.env
+.env.*
+
+# Виртуальное окружение Python
+venv/
+env/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.so
+*.dll
+
+# Файлы базы данных SQLite
+*.db
+*.sqlite
+*.sqlite3
+
+# Папки IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Логи
+logs/
+*.log
+
+# Файлы ОС
+Thumbs.db
+Desktop.ini
+
+# Временные файлы
+*.tmp
+*.temp
+
+# Файлы тестов и покрытия
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Файлы асинхронной компиляции (AIogram FSM)
+*.pkl
+
+# Директория с обученными моделями
+ai_module/__pycache__/
+*.h5
+*.pb
