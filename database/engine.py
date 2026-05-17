@@ -16,10 +16,10 @@ if DATABASE_URL:
     # Заменяем postgresql:// на postgresql+asyncpg:// для асинхронной работы
     if DATABASE_URL.startswith("postgresql://"):
         DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://", 1)
-    print(f"Используется PostgreSQL (Render)")
+    
 
     # Добавляем sslmode=require в URL, если его нет
-    if "sslmode=require" not in DATABASE_URL:
+    if "sslmode=" not in DATABASE_URL:
         separator = "&" if "?" in DATABASE_URL else "?"
         DATABASE_URL += f"{separator}sslmode=require"
 
