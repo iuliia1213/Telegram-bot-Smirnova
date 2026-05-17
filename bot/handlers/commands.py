@@ -4,7 +4,7 @@
 import logging
 from aiogram import Router, F, types, Dispatcher
 from aiogram.types import Message, CallbackQuery
-from aiogram.filters import Command, CommandObject
+from aiogram.filters import CommandObject
 from aiogram.fsm.context import FSMContext
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -31,7 +31,7 @@ user_carts = {}
 
 
 #  КОМАНДА /add (добавить в корзину) 
-@router.message(Command("add"))
+@router.message(F.command("add"))
 @log_action("add_to_cart")
 @require_auth
 async def cmd_add_to_cart(message: Message, command: CommandObject):
@@ -99,7 +99,7 @@ async def cmd_add_to_cart(message: Message, command: CommandObject):
 
 
 # КОМАНДА /cart (показать корзину)
-@router.message(Command("cart"))
+@router.message(F.command("cart"))
 @log_action("cart")
 @require_auth
 async def cmd_cart(message: Message, session: AsyncSession):
@@ -151,7 +151,7 @@ async def cmd_cart(message: Message, session: AsyncSession):
 
 
 #  КОМАНДА /clear_cart (очистить корзину) 
-@router.message(Command("clear_cart"))
+@router.message(F.command("clear_cart"))
 @log_action("clear_cart")
 @require_auth
 async def cmd_clear_cart(message: Message):
@@ -168,7 +168,7 @@ async def cmd_clear_cart(message: Message):
 
 
 # КОМАНДА /checkout (оформление заказа) 
-@router.message(Command("checkout"))
+@router.message(F.command("checkout"))
 @log_action("checkout")
 @require_auth
 async def cmd_checkout(message: Message):
@@ -215,7 +215,7 @@ async def cmd_checkout(message: Message):
 
 
 #  КОМАНДА /start 
-@router.message(Command("start"))
+@router.message(F.command("start"))
 @log_action("start")
 async def cmd_start(message: Message, session: AsyncSession):
     
@@ -266,7 +266,7 @@ async def cmd_start(message: Message, session: AsyncSession):
 
 
 # КОМАНДА /help 
-@router.message(Command("help"))
+@router.message(F.command("help"))
 @log_action("help")
 async def cmd_help(message: Message):
     
@@ -306,7 +306,7 @@ async def cmd_help(message: Message):
 
 
 #  КОМАНДА /catalog 
-@router.message(Command("catalog"))
+@router.message(F.command("catalog"))
 @log_action("catalog")
 @require_auth
 async def cmd_catalog(message: Message, session: AsyncSession):
@@ -324,7 +324,7 @@ async def cmd_catalog(message: Message, session: AsyncSession):
 
 
 # КОМАНДА /search 
-@router.message(Command("search"))
+@router.message(F.command("search"))
 @log_action("search")
 @require_auth
 async def cmd_search(message: Message, command: CommandObject, session: AsyncSession):
@@ -377,7 +377,7 @@ async def cmd_search(message: Message, command: CommandObject, session: AsyncSes
 
 
 #  КОМАНДА /product 
-@router.message(Command("product"))
+@router.message(F.command("product"))
 @log_action("product_info")
 @require_auth
 async def cmd_product(message: Message, command: CommandObject, session: AsyncSession):
@@ -427,7 +427,7 @@ async def cmd_product(message: Message, command: CommandObject, session: AsyncSe
 
 
 #  КОМАНДА /price 
-@router.message(Command("price"))
+@router.message(F.command("price"))
 @log_action("price")
 @require_auth
 async def cmd_price(message: Message, command: CommandObject):
@@ -469,7 +469,7 @@ async def cmd_price(message: Message, command: CommandObject):
 
 
 # КОМАНДА /stock 
-@router.message(Command("stock"))
+@router.message(F.command("stock"))
 @log_action("stock")
 @require_auth
 async def cmd_stock(message: Message, command: CommandObject):
@@ -513,7 +513,7 @@ async def cmd_stock(message: Message, command: CommandObject):
 
 
 #  КОМАНДА /favorites
-@router.message(Command("favorites"))
+@router.message(F.command("favorites"))
 @log_action("favorites")
 @require_auth
 async def cmd_favorites(message: Message, session: AsyncSession):
@@ -533,7 +533,7 @@ async def cmd_favorites(message: Message, session: AsyncSession):
 
 
 #  КОМАНДА /profile
-@router.message(Command("profile"))
+@router.message(F.command("profile"))
 @log_action("profile")
 @require_auth
 async def cmd_profile(message: Message, session: AsyncSession):
@@ -567,7 +567,7 @@ async def cmd_profile(message: Message, session: AsyncSession):
 
 
 #  КОМАНДА /settings
-@router.message(Command("settings"))
+@router.message(F.command("settings"))
 @log_action("settings")
 @require_auth
 async def cmd_settings(message: Message, session: AsyncSession):
