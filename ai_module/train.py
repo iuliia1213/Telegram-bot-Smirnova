@@ -828,7 +828,7 @@ def create_dataset() -> Tuple[List[str], List[str]]:
         ("Ищу поилочку для попугая", "find_product"),
         ("Найди жёрдочки для попугаев", "find_product"),
         ("Покажи купалку для птиц", "find_product"),
-        ("Подбери минеральный камень", "find_product"),
+        ("Подбери минеральный камень", "find_product")
     ]
     
     # 2. ИНФОРМАЦИЯ О ТОВАРЕ (get_product_info) - 35 примеров 
@@ -867,7 +867,7 @@ def create_dataset() -> Tuple[List[str], List[str]]:
         ("Антибактериальное покрытие", "get_product_info"),
         ("Экологичность материалов", "get_product_info"),
         ("Сертификация товара", "get_product_info"),
-        ("Отзывы покупателей о товаре", "get_product_info"),
+        ("Отзывы покупателей о товаре", "get_product_info")
     ]
     
     # 3. ПРОВЕРКА ЦЕНЫ (check_price) - 35 примеров 
@@ -906,7 +906,7 @@ def create_dataset() -> Tuple[List[str], List[str]]:
         ("Цена для постоянных клиентов", "check_price"),
         ("Сколько стоит абонемент", "check_price"),
         ("Цена подарочной упаковки", "check_price"),
-        ("Стоимость возврата товара", "check_price"),
+        ("Стоимость возврата товара", "check_price")
     ]
     
     #  4. ПРОВЕРКА НАЛИЧИЯ (check_availability) - 35 примеров 
@@ -945,7 +945,7 @@ def create_dataset() -> Tuple[List[str], List[str]]:
         ("Остатки в постаматах", "check_availability"),
         ("Доступность в дарксторах", "check_availability"),
         ("Есть ли на маркетплейсах", "check_availability"),
-        ("Можно ли забрать сегодня", "check_availability"),
+        ("Можно ли забрать сегодня", "check_availability")
     ]
     
     #  5. СОВЕТЫ ПО УХОДУ (get_care_advice) - 40 примеров 
@@ -989,7 +989,7 @@ def create_dataset() -> Tuple[List[str], List[str]]:
         ("Как стресс влияет на питомца", "get_care_advice"),
         ("Адаптация в новом доме", "get_care_advice"),
         ("Приучение к туалету на улице", "get_care_advice"),
-        ("Как выбрать пелёнку для щенка", "get_care_advice"),
+        ("Как выбрать пелёнку для щенка", "get_care_advice")
     ]
     
     #  6. ВОПРОСЫ О ДОСТАВКЕ (ask_delivery) - 35 примеров 
@@ -1028,7 +1028,7 @@ def create_dataset() -> Tuple[List[str], List[str]]:
         ("Изменение адреса доставки", "ask_delivery"),
         ("Перенос даты доставки", "ask_delivery"),
         ("Доставка в подарок", "ask_delivery"),
-        ("Поздравление с доставкой", "ask_delivery"),
+        ("Поздравление с доставкой", "ask_delivery")
     ]
     
     # 7. ВОПРОСЫ ОБ ОПЛАТЕ (ask_payment) - 35 примеров 
@@ -1067,7 +1067,7 @@ def create_dataset() -> Tuple[List[str], List[str]]:
         ("График платежей", "ask_payment"),
         ("Досрочное погашение", "ask_payment"),
         ("Штраф за просрочку", "ask_payment"),
-        ("Автоплатеж", "ask_payment"),
+        ("Автоплатеж", "ask_payment")
     ]
     
     #  8. АКЦИИ И СКИДКИ (ask_promotions) - 35 примеров 
@@ -1106,7 +1106,7 @@ def create_dataset() -> Tuple[List[str], List[str]]:
         ("Мгновенная скидка", "ask_promotions"),
         ("Скидка по промокоду", "ask_promotions"),
         ("Активация промокода", "ask_promotions"),
-        ("Как получить промокод", "ask_promotions"),
+        ("Как получить промокод", "ask_promotions")
     ]
     
     #  9. ВОЗВРАТ ТОВАРА (return_product) - 30 примеров 
@@ -1140,7 +1140,7 @@ def create_dataset() -> Tuple[List[str], List[str]]:
         ("Отказ от предзаказа", "return_product"),
         ("Возврат предоплаты", "return_product"),
         ("Расторжение договора", "return_product"),
-        ("Обмен на другой товар", "return_product"),
+        ("Обмен на другой товар", "return_product")
     ]
     
     #  10. ПРОГРАММА ЛОЯЛЬНОСТИ (loyalty_program) - 30 примеров
@@ -1174,7 +1174,7 @@ def create_dataset() -> Tuple[List[str], List[str]]:
         ("Как связать карту", "loyalty_program"),
         ("Проверка баланса бонусов", "loyalty_program"),
         ("История начисления баллов", "loyalty_program"),
-        ("Служба поддержки лояльности", "loyalty_program"),
+        ("Служба поддержки лояльности", "loyalty_program")
     ]
     
     # 11. ВЕТЕРИНАРНЫЕ СОВЕТЫ (veterinary_advice) - 30 примеров 
@@ -1208,7 +1208,7 @@ def create_dataset() -> Tuple[List[str], List[str]]:
         ("Профилактика глистов", "veterinary_advice"),
         ("График дегельминтизации", "veterinary_advice"),
         ("Антибиотики для животных", "veterinary_advice"),
-        ("Как ухаживать за больным питомцем", "veterinary_advice"),
+        ("Как ухаживать за больным питомцем", "veterinary_advice")
     ]
     
     #  12. ПРИВЕТСТВИЯ (greeting) - 25 примеров 
@@ -1237,7 +1237,7 @@ def create_dataset() -> Tuple[List[str], List[str]]:
         ("С праздником", "greeting"),
         ("С новым годом", "greeting"),
         ("С днем рождения", "greeting"),
-        ("Мир вашему дому", "greeting"),
+        ("Мир вашему дому", "greeting")
     ]
     
     #  13. ПРОЩАНИЯ (goodbye) - 25 примеров 
@@ -1266,7 +1266,7 @@ def create_dataset() -> Tuple[List[str], List[str]]:
         ("Спокойной ночи", "goodbye"),
         ("Сладких снов", "goodbye"),
         ("До новых встреч", "goodbye"),
-        ("Выхожу из чата", "goodbye"),
+        ("Выхожу из чата", "goodbye")
     ]
     
     #  14. ПОМОЩЬ (help) - 25 примеров 
@@ -1295,7 +1295,7 @@ def create_dataset() -> Tuple[List[str], List[str]]:
         ("Что делать дальше", "help"),
         ("Как задать вопрос", "help"),
         ("Формат запросов", "help"),
-        ("Инструкция", "help"),
+        ("Инструкция", "help")
     ]
     
     #  15. ПРОЧИЕ (other) - 25 примеров
@@ -1324,10 +1324,10 @@ def create_dataset() -> Tuple[List[str], List[str]]:
         ("Какой сегодня день", "other"),
         ("Который час", "other"),
         ("Погода за окном", "other"),
-        ("Новости дня", "other"),
+        ("Новости дня", "other")
     ]
     
-        #  ДОПОЛНИТЕЛЬНЫЕ +500 ПРИМЕРОВ 
+        #  ДОПОЛНИТЕЛЬНЫЕ ПРИМЕРЫ
     
     # Дополнительные примеры для ПОИСКА ТОВАРА (find_product) +30 
     additional_find_product = [
@@ -1360,7 +1360,7 @@ def create_dataset() -> Tuple[List[str], List[str]]:
         ("Ищу товары для аквариума", "find_product"),
         ("Нужна клетка для попугая", "find_product"),
         ("Подбери жёрдочки", "find_product"),
-        ("Найди зеркальце для птиц", "find_product"),
+        ("Найди зеркальце для птиц", "find_product")
     ]
     
     #  Дополнительные примеры для ИНФОРМАЦИИ О ТОВАРЕ (get_product_info) +30 
@@ -1394,7 +1394,7 @@ def create_dataset() -> Tuple[List[str], List[str]]:
         ("Какой вес упаковки", "get_product_info"),
         ("Цвет в наличии", "get_product_info"),
         ("Размерная сетка", "get_product_info"),
-        ("Инструкция по применению", "get_product_info"),
+        ("Инструкция по применению", "get_product_info")
     ]
     
     #  Дополнительные примеры для ЦЕНЫ (check_price) +30 
@@ -1428,7 +1428,7 @@ def create_dataset() -> Tuple[List[str], List[str]]:
         ("Финальная цена", "check_price"),
         ("Цена оптом", "check_price"),
         ("Стоимость набора", "check_price"),
-        ("Цена с доставкой", "check_price"),
+        ("Цена с доставкой", "check_price")
     ]
     
     #  Дополнительные примеры для НАЛИЧИЯ (check_availability) +30 
@@ -1462,7 +1462,7 @@ def create_dataset() -> Tuple[List[str], List[str]]:
         ("Доставка из другого города", "check_availability"),
         ("Когда ожидать поставку", "check_availability"),
         ("Товар в пути", "check_availability"),
-        ("Скоро в продаже", "check_availability"),
+        ("Скоро в продаже", "check_availability")
     ]
     
     #  Дополнительные примеры для СОВЕТОВ ПО УХОДУ (get_care_advice) +40 
@@ -1506,7 +1506,7 @@ def create_dataset() -> Tuple[List[str], List[str]]:
         ("Как купать кошку", "get_care_advice"),
         ("Стрижка собак", "get_care_advice"),
         ("Уход за лапами", "get_care_advice"),
-        ("Как одеть питомца", "get_care_advice"),
+        ("Как одеть питомца", "get_care_advice")
     ]
     
     #  Дополнительные примеры для ДОСТАВКИ (ask_delivery) +30 
@@ -1540,7 +1540,7 @@ def create_dataset() -> Tuple[List[str], List[str]]:
         ("Смена адреса", "ask_delivery"),
         ("Перенос даты", "ask_delivery"),
         ("Доставка подарка", "ask_delivery"),
-        ("Поздравление с заказом", "ask_delivery"),
+        ("Поздравление с заказом", "ask_delivery")
     ]
     
     #  Дополнительные примеры для ОПЛАТЫ (ask_payment) +30 
@@ -1574,7 +1574,7 @@ def create_dataset() -> Tuple[List[str], List[str]]:
         ("Товар в кредит", "ask_payment"),
         ("Первый взнос", "ask_payment"),
         ("График платежей", "ask_payment"),
-        ("Досрочное погашение", "ask_payment"),
+        ("Досрочное погашение", "ask_payment")
     ]
     
     #  Дополнительные примеры для АКЦИЙ (ask_promotions) +30 
@@ -1608,7 +1608,7 @@ def create_dataset() -> Tuple[List[str], List[str]]:
         ("Скидка за самовывоз", "ask_promotions"),
         ("Промокод на почту", "ask_promotions"),
         ("Секретная скидка", "ask_promotions"),
-        ("Как получить промокод", "ask_promotions"),
+        ("Как получить промокод", "ask_promotions")
     ]
     
     #  Дополнительные примеры для ВОЗВРАТА (return_product) +20 
@@ -1632,7 +1632,7 @@ def create_dataset() -> Tuple[List[str], List[str]]:
         ("Через почту вернуть", "return_product"),
         ("Курьер заберёт", "return_product"),
         ("Не подошёл размер", "return_product"),
-        ("Передумал", "return_product"),
+        ("Передумал", "return_product")
     ]
     
     #  Дополнительные примеры для ЛОЯЛЬНОСТИ (loyalty_program) +20 
@@ -1656,7 +1656,7 @@ def create_dataset() -> Tuple[List[str], List[str]]:
         ("Эксклюзивные скидки", "loyalty_program"),
         ("Специальные промокоды", "loyalty_program"),
         ("Бонусная карта в подарок", "loyalty_program"),
-        ("Проверка баланса", "loyalty_program"),
+        ("Проверка баланса", "loyalty_program")
     ]
     
     #  Дополнительные примеры для ВЕТЕРИНАРНЫХ СОВЕТОВ (veterinary_advice) +20 
@@ -1680,7 +1680,7 @@ def create_dataset() -> Tuple[List[str], List[str]]:
         ("После прививки", "veterinary_advice"),
         ("Аллергия на корм", "veterinary_advice"),
         ("Дерматит у кошки", "veterinary_advice"),
-        ("Профилактика глистов", "veterinary_advice"),
+        ("Профилактика глистов", "veterinary_advice")
     ]
     
     #  Дополнительные примеры для ПРИВЕТСТВИЙ (greeting) +20 
@@ -1704,7 +1704,7 @@ def create_dataset() -> Tuple[List[str], List[str]]:
         ("Привет-привет", "greeting"),
         ("Хелло", "greeting"),
         ("Хэллоу", "greeting"),
-        ("Приятно познакомиться", "greeting"),
+        ("Приятно познакомиться", "greeting")
     ]
     
     #  Дополнительные примеры для ПРОЩАНИЙ (goodbye) +20 
@@ -1728,7 +1728,7 @@ def create_dataset() -> Tuple[List[str], List[str]]:
         ("Сладких снов", "goodbye"),
         ("Выхожу", "goodbye"),
         ("Отключаюсь", "goodbye"),
-        ("Завершаю диалог", "goodbye"),
+        ("Завершаю диалог", "goodbye")
     ]
     
     #  Дополнительные примеры для ПОМОЩИ (help) +30 
@@ -1762,7 +1762,7 @@ def create_dataset() -> Tuple[List[str], List[str]]:
         ("Зачем ты нужен", "help"),
         ("Какой смысл", "help"),
         ("Покажи пример", "help"),
-        ("Демонстрация", "help"),
+        ("Демонстрация", "help")
     ]
     
     #  Дополнительные примеры для ПРОЧИХ (other) +30 
@@ -1796,7 +1796,7 @@ def create_dataset() -> Tuple[List[str], List[str]]:
         ("Проходит тест", "other"),
         ("Всё равно", "other"),
         ("Без разницы", "other"),
-        ("Как хочешь", "other"),
+        ("Как хочешь", "other")
     ]
     
     #  Добавляем дополнительные примеры 
