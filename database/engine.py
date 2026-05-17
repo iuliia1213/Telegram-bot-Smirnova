@@ -12,10 +12,18 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 
 if DATABASE_URL:
     # Render: используем предоставленную строку подключения PostgreSQL
+    print(f"Используется PostgreSQL (Render): {DATABASE_URL}")
     # Заменяем postgresql:// на postgresql+asyncpg:// для асинхронной работы
     if DATABASE_URL.startswith("postgresql://"):
         DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://", 1)
     print(f"Используется PostgreSQL (Render)")
+
+    # Добавляем sslmode=require в URL, если его нет
+    if "sslmode=require" not in DATABASE_URL:
+        separator = "&" if "?" in DATABASE_URL else "?"
+        DATABASE_URL += f"{separator}sslmode=require"
+
+    print(f"Итоговый URL для подключения: {DATABASE_URL}")
     
     # Для PostgreSQL - с параметрами пула
     engine = create_async_engine(
@@ -23,13 +31,16 @@ if DATABASE_URL:
         echo=os.getenv("DB_ECHO", "False").lower() == "true",
         pool_size=10,
         max_overflow=20,
-        pool_pre_ping=True
+        pool_pre_ping=True,
+        connect_args={
+            "sslmode": "require"
+        }
     )
 else:
     # Локально: используем SQLite
     SQLITE_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "bot_database.db")
-    DATABASE_URL = f"sqlite+aiosqlite:///{SQLITE_PATH}"
-    print(f"Используется SQLite (локально): {SQLITE_PATH}")
+    DATABASE_URL = f"sqlite+aiosqlite:///{sqlite_path}"
+    print(f"Используется SQLite (локально): {sqlite_path}")
     
     # Для SQLite - БЕЗ параметров пула
     engine = create_async_engine(
