@@ -14,7 +14,7 @@ requests>=2.31.0
 SQLAlchemy>=2.0.0
 asyncpg>=0.30.0
 alembic>=1.13.0
-aiosqlite>=0.20.0
+
 
 # Для работы с переменными окружения
 python-dotenv>=1.0.0
