@@ -50,3 +50,7 @@ htmlcov/
 ai_module/__pycache__/
 *.h5
 *.pb
+
+# В .gitignore добавлено:
+logs/
+*.log
