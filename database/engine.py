@@ -18,10 +18,9 @@ if DATABASE_URL:
         DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://", 1)
     
 
-    # Добавляем sslmode=require в URL, если его нет
-    if "sslmode=" not in DATABASE_URL:
-        separator = "&" if "?" in DATABASE_URL else "?"
-        DATABASE_URL += f"{separator}sslmode=require"
+    # Убираем sslmode из URL, если он там есть
+    DATABASE_URL = DATABASE_URL.split("?")[0]
+
 
     print(f"Итоговый URL для подключения: {DATABASE_URL}")
     
@@ -33,7 +32,7 @@ if DATABASE_URL:
         max_overflow=20,
         pool_pre_ping=True,
         connect_args={
-            "sslmode": "require"
+            "ssl": "require"
         }
     )
 else:
