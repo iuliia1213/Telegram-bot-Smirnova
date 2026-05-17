@@ -5,6 +5,7 @@ import os
 import sys
 import threading
 from pathlib import Path
+from bot.db_provider import set_product_db
 
 # Добавляем корневую директорию в путь для импортов
 sys.path.append(str(Path(__file__).parent))
@@ -50,6 +51,8 @@ dp = Dispatcher(storage=storage)
 # Загружаем товарную базу из JSON
 product_db = ProductDB('products.json')
 logger.info(f"Товарная база загружена: {len(product_db.products)} товаров")
+
+set_product_db(product_db)
 
 # ВЕБ-СЕРВЕР ДЛЯ RENDER 
 web_app = Flask(__name__)
