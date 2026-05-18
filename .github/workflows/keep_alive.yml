@@ -1,0 +1,16 @@
+name: Keep Render Alive
+
+on:
+  schedule:
+    # Запуск каждые 10 минут
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Render Service
+        run: |
+          curl -s -o /dev/null "https://telegram-bot-4lapy.onrender.com"
+          echo "Ping sent at $(date)"
