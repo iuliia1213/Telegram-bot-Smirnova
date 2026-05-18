@@ -24,7 +24,7 @@ class AIModelManager:
     # Инициализация менеджера модели
     def __init__(self):
         
-        self.model_path = os.getenv('AI_MODEL_PATH', 'ai_model/pet_store_model')
+        self.model_path = os.getenv('AI_MODEL_PATH', 'ai_model/pet_store_model_v3_fixed')
         self._classifier = None
 
     #  Загрузим обученную модель   
@@ -34,7 +34,7 @@ class AIModelManager:
             
         try:
             if os.path.exists(self.model_path):
-                self._classifier = PetStoreIntentClassifier.load_model(self.model_path)
+                self._classifier = PetStoreIntentClassifier.load_from_file(self.model_path)
                 print(f"Модель успешно загружена из {self.model_path}")
                 return self._classifier
             else:
